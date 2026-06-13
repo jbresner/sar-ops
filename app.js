@@ -499,7 +499,7 @@ function screenEntry() {
         </div>
       </div>
     </div>
-    <div class="entry-footer">SAR Ops · v1.1 · Shenandoah Mountain Rescue Group</div>
+    <div class="entry-footer">SAR Ops · v1.2 · Shenandoah Mountain Rescue Group</div>
   </div>`;
 }
 
@@ -596,7 +596,7 @@ function screenMissionsList() {
       ${ICON_CLK} View past missions — March 2026 and earlier
     </div>
   </div>
-  <div class="version-tag">v1.1</div>`;
+  <div class="version-tag">v1.2</div>`;
 }
 
 /* ─── 3. Mission detail ─────────────────────────────────────────── */
@@ -714,7 +714,7 @@ function screenMissionDetail() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.1</div>`;
+  <div class="version-tag">v1.2</div>`;
 }
 
 /* ─── 4. New mission form ───────────────────────────────────────── */
@@ -799,7 +799,7 @@ function screenNewMission() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.1</div>`;
+  <div class="version-tag">v1.2</div>`;
 }
 
 /* ─── 5. Broadcast alert ────────────────────────────────────────── */
@@ -856,7 +856,7 @@ function screenBroadcastAlert() {
       <button class="btn btn-green" onclick="navigate('mission-detail',{missionId:'${missionId}'})">Send alert to 24 members</button>
     </div>
   </div>
-  <div class="version-tag">v1.1</div>`;
+  <div class="version-tag">v1.2</div>`;
 }
 
 /* ─── 6. Member alert response ──────────────────────────────────── */
@@ -951,7 +951,7 @@ function screenMemberAlert() {
     </div>
     `}
   </div>
-  <div class="version-tag">v1.1</div>`;
+  <div class="version-tag">v1.2</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════
