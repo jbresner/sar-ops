@@ -407,7 +407,65 @@ textarea { resize: vertical; line-height: 1.5; }
 /* ─── Version tag ──────────────────────────────────────────────── */
 .version-tag { position: fixed; bottom: 8px; right: 12px; font-size: 10px; color: var(--text-3); pointer-events: none; }
 
-/* ─── Responsive ───────────────────────────────────────────────── */
+/* ─── Detail page layout ───────────────────────────────────────── */
+.detail-page { max-width: 1100px; }
+
+/* 12-col grid: 8 primary + 4 secondary */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.detail-primary  { min-width: 0; }
+.detail-secondary { min-width: 0; }
+
+/* Member rows in detail — no status pill */
+.detail-member-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.detail-member-row:last-child { border-bottom: none; }
+
+/* Section count badge */
+.section-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg-subtle); color: var(--text-2);
+  font-size: 11px; font-weight: 600;
+  border-radius: 20px; padding: 1px 7px; margin-left: 6px;
+}
+
+/* Empty state */
+.detail-empty { font-size: 13px; color: var(--text-3); padding: 4px 0; }
+
+/* Not yet responded name chips */
+.noresp-names { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; }
+.noresp-name {
+  font-size: 12px; color: var(--text-2);
+  background: var(--bg-subtle); border-radius: var(--radius-sm);
+  padding: 3px 9px;
+}
+.noresp-more {
+  font-size: 12px; color: var(--text-3);
+  background: var(--bg-subtle); border-radius: var(--radius-sm);
+  padding: 3px 9px; font-style: italic;
+}
+
+/* Collapsible mission info */
+.collapsible-card  { }
+.collapsible-hdr   {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.collapsible-hdr:hover .collapsible-chevron { color: var(--text-1); }
+.collapsible-chevron { font-size: 11px; color: var(--text-3); }
+.collapsible-body { }
+
+/* Responsive: stack on narrow screens */
+@media (max-width: 700px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 600px) {
   .two-col    { grid-template-columns: 1fr; }
   .stats4     { grid-template-columns: repeat(2,1fr); }

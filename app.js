@@ -613,7 +613,7 @@ function screenEntry() {
         </div>
       </div>
     </div>
-    <div class="entry-footer">SAR Ops · v1.4 · Shenandoah Mountain Rescue Group</div>
+    <div class="entry-footer">SAR Ops · v1.5 · Shenandoah Mountain Rescue Group</div>
   </div>`;
 }
 
@@ -710,125 +710,161 @@ function screenMissionsList() {
       ${ICON_CLK} View past missions — March 2026 and earlier
     </div>
   </div>
-  <div class="version-tag">v1.4</div>`;
+  <div class="version-tag">v1.5</div>`;
 }
 
 /* ─── 3. Mission detail ─────────────────────────────────────────── */
+function toggleMissionInfo() {
+  APP.missionInfoOpen = !APP.missionInfoOpen;
+  render();
+}
+
+function nudgeAll(missionId) {
+  const rs = getResponses(missionId).filter(r => r.availability === 'no_response');
+  rs.forEach(r => { APP.nudged[r.memberId] = true; });
+  render();
+}
+
 function screenMissionDetail() {
   const { missionId } = APP.params;
   const m = getMission(missionId);
   if (!m) return `<p style="padding:20px;">Mission not found.</p>`;
 
-  const counts   = getCounts(m.id);
-  const rs       = getResponses(m.id);
-  const search   = rs.filter(r => r.availability === 'search');
-  const dispatch = rs.filter(r => r.availability === 'dispatch');
-  const unavail  = rs.filter(r => r.availability === 'unavailable');
-  const noresp   = rs.filter(r => r.availability === 'no_response');
-  const log      = getLog(m.id);
+  const counts  = getCounts(m.id);
+  const rs      = getResponses(m.id);
+  const search  = rs.filter(r => r.availability === 'search');
+  const dispatch= rs.filter(r => r.availability === 'dispatch');
+  const unavail = rs.filter(r => r.availability === 'unavailable');
+  const noresp  = rs.filter(r => r.availability === 'no_response');
+  const log     = getLog(m.id);
+  const infoOpen = !!APP.missionInfoOpen;
+  const msnNum  = m.id.replace('msn-','2026-');
+  const allNudged = noresp.every(r => APP.nudged[r.memberId]);
 
-  function memberRosterRow(resp) {
+  function memberNameRow(resp) {
     const member = getMember(resp.memberId);
     if (!member) return '';
-    return rosterRow(member, resp);
-  }
-
-  function nudgeRow(resp, i) {
-    const member = getMember(resp.memberId);
-    if (!member) return '';
-    const sent = APP.nudged[resp.memberId];
+    const detail = resp.availability === 'search'
+      ? (resp.needsRide ? 'Needs a ride' : resp.canTakePassengers ? 'Can take passenger' : 'Driving solo') + (resp.eta ? ' · ETA ' + resp.eta : '')
+      : resp.availability === 'dispatch' ? 'Remote' : '';
     return `
-    <div class="roster-row">
+    <div class="detail-member-row">
       <div class="av ${member.avatarColor}">${member.initials}</div>
-      <div class="roster-info"><div class="roster-name">${member.name}</div></div>
-      <button class="nudge-btn ${sent ? 'sent' : ''}" onclick="nudgeMember('${resp.memberId}')">${sent ? 'Sent ✓' : 'Nudge'}</button>
+      <div class="roster-info">
+        <div class="roster-name">${member.name}</div>
+        ${detail ? `<div class="roster-detail">${detail}</div>` : ''}
+      </div>
     </div>`;
   }
 
-  const msnNum = m.id.replace('msn-','2026-');
+  // Summary stat cards matching Missions page style
+  function statCard(n, label, numClass) {
+    return `<div class="stat-box"><div class="stat-n ${numClass}">${n}</div><div class="stat-l">${label}</div></div>`;
+  }
 
   return `
   ${renderTopbar()}
   ${bc([
     {label:'Home',screen:'entry'},
     {label:'Missions',screen:'missions-list'},
-    {label:`#${msnNum}`}
+    {label:'#'+msnNum}
   ])}
-  <div class="page">
-    <div class="card" style="margin-bottom:10px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
-        <span class="t-time">#${msnNum}</span>
+  <div class="page detail-page">
+
+    <!-- Mission header card -->
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--text-3);">#${msnNum}</span>
         ${statusPill(m.status)}
       </div>
-      <div style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:6px;">${m.title}</div>
-      <div class="t-meta" style="line-height:1.8;">
-        <b>Agency:</b> ${m.agency} &nbsp;·&nbsp; <b>POC:</b> ${m.poc} · ${m.pocPhone}<br>
-        ${m.baseName ? `<b>Base:</b> ${m.baseName}${m.baseAddress ? ', ' + m.baseAddress : ''}${m.baseCoords ? ' · USNG ' + m.baseCoords : ''}<br>` : ''}
-        <b>Created:</b> ${m.createdAt}
-        ${m.alertSentAt ? ` &nbsp;·&nbsp; <b>Alert sent:</b> ${m.alertSentAt}` : ''}
+      <div style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:8px;">${m.title}</div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.7;">
+        <b>Agency:</b> ${m.agency} &nbsp;·&nbsp; <b>POC:</b> ${m.poc} · ${m.pocPhone}
+        ${m.baseName ? `<br><b>Base:</b> ${m.baseName}${m.baseAddress ? ', '+m.baseAddress:''}${m.baseCoords?' · USNG '+m.baseCoords:''}` : ''}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
         ${m.status !== 'closed' ? `<button class="btn btn-green btn-sm" onclick="navigate('broadcast-alert',{missionId:'${m.id}'})">Send activation alert</button>` : ''}
-        <button class="btn btn-blue btn-sm">Notify agency</button>
         <button class="btn btn-sm">Edit mission</button>
         ${m.status !== 'closed' ? `<button class="btn btn-sm">Close mission</button>` : ''}
       </div>
     </div>
 
-    <div class="stats4">
-      <div class="sc"><div class="sc-n grn">${counts.search}</div><div class="sc-l">Available for search</div></div>
-      <div class="sc"><div class="sc-n blu">${counts.dispatch}</div><div class="sc-l">Available for dispatch</div></div>
-      <div class="sc"><div class="sc-n red">${counts.unavailable}</div><div class="sc-l">Unavailable</div></div>
-      <div class="sc"><div class="sc-n gry">${counts.no_response}</div><div class="sc-l">Not yet responded</div></div>
+    <!-- Summary stats — matches Missions page stat-box style -->
+    <div class="mission-stats" style="margin-bottom:14px;">
+      ${statCard(counts.search,   'Available for search',   'grn')}
+      ${statCard(counts.dispatch, 'Available for dispatch', 'blu')}
+      ${statCard(counts.unavailable,'Unavailable',          'red')}
+      ${statCard(counts.no_response,'Not yet responded',    'gry')}
     </div>
 
-    <div class="two-col">
-      <div>
+    <!-- 12-col layout: 8 left (responses) + 4 right (log + info) -->
+    <div class="detail-grid">
+
+      <!-- LEFT: Response management (8 cols) -->
+      <div class="detail-primary">
+
         <div class="card" style="margin-bottom:10px;">
-          <div class="card-section-title">Available for search (${counts.search})</div>
-          ${search.slice(0,5).map(memberRosterRow).join('')}
-          ${search.length > 5 ? `<div class="roster-more">+ ${search.length-5} more</div>` : ''}
-          ${search.length === 0 ? `<div class="t-time">No members available for search yet.</div>` : ''}
+          <div class="card-section-title">Available for search <span class="section-count">${counts.search}</span></div>
+          ${search.length === 0 ? `<div class="detail-empty">No members available for search yet.</div>` : ''}
+          ${search.map(memberNameRow).join('')}
         </div>
+
         <div class="card" style="margin-bottom:10px;">
-          <div class="card-section-title">Available for dispatch (${counts.dispatch})</div>
-          ${dispatch.map(memberRosterRow).join('')}
-          ${dispatch.length === 0 ? `<div class="t-time">No members available for dispatch yet.</div>` : ''}
+          <div class="card-section-title">Available for dispatch <span class="section-count">${counts.dispatch}</span></div>
+          ${dispatch.length === 0 ? `<div class="detail-empty">No members available for dispatch yet.</div>` : ''}
+          ${dispatch.map(memberNameRow).join('')}
         </div>
+
+        <div class="card" style="margin-bottom:10px;">
+          <div class="card-section-title">Unavailable <span class="section-count">${counts.unavailable}</span></div>
+          ${unavail.length === 0 ? `<div class="detail-empty">No members marked unavailable.</div>` : ''}
+          ${unavail.map(memberNameRow).join('')}
+        </div>
+
         <div class="card">
-          <div class="card-section-title">Unavailable (${counts.unavailable})</div>
-          ${unavail.map(memberRosterRow).join('')}
-          ${unavail.length === 0 ? `<div class="t-time">No members marked unavailable.</div>` : ''}
+          <div class="card-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Not yet responded <span class="section-count">${counts.no_response}</span></span>
+            ${noresp.length > 0 ? `<button class="nudge-btn${allNudged?' sent':''}" onclick="nudgeAll('${m.id}')">${allNudged?'All nudged ✓':'Nudge all'}</button>` : ''}
+          </div>
+          ${noresp.length === 0
+            ? `<div class="detail-empty" style="color:var(--green);">All members have responded.</div>`
+            : `<div class="noresp-names">${noresp.slice(0,6).map(r => { const mb=getMember(r.memberId); return mb ? `<span class="noresp-name">${mb.name}</span>` : ''; }).join('')}${noresp.length > 6 ? `<span class="noresp-more">+ ${noresp.length-6} more</span>` : ''}</div>`
+          }
         </div>
       </div>
-      <div>
+
+      <!-- RIGHT: Activity log + collapsible mission info (4 cols) -->
+      <div class="detail-secondary">
+
         <div class="card" style="margin-bottom:10px;">
-          <div class="card-section-title">Not yet responded (${counts.no_response})</div>
-          ${noresp.slice(0,8).map((r,i) => nudgeRow(r,i)).join('')}
-          ${noresp.length > 8 ? `<div class="roster-more">+ ${noresp.length-8} more</div>` : ''}
-          ${noresp.length === 0 ? `<div class="t-time" style="color:var(--green);">All members have responded.</div>` : ''}
-        </div>
-        <div class="card" style="margin-bottom:10px;">
-          <div class="card-section-title">Mission info</div>
-          <div class="info-grid">
-            <div class="info-cell"><div class="info-cell-label">Requesting agency</div><div class="info-cell-value">${m.agency}</div></div>
-            <div class="info-cell"><div class="info-cell-label">Agency POC</div><div class="info-cell-value">${m.poc}</div></div>
-            <div class="info-cell"><div class="info-cell-label">POC contact</div><div class="info-cell-value">${m.pocPhone}</div></div>
-            <div class="info-cell"><div class="info-cell-label">Created</div><div class="info-cell-value">${m.createdAt}</div></div>
-            ${m.baseName ? `<div class="info-cell"><div class="info-cell-label">Base location</div><div class="info-cell-value">${m.baseName}</div></div>` : ''}
-            ${m.baseCoords ? `<div class="info-cell"><div class="info-cell-label">USNG coords</div><div class="info-cell-value">${m.baseCoords}</div></div>` : ''}
-          </div>
-          ${m.description ? `<div style="margin-top:10px;font-size:12px;color:var(--text-2);line-height:1.6;">${m.description}</div>` : ''}
-        </div>
-        <div class="card">
           <div class="card-section-title">Activity log</div>
+          ${log.length === 0 ? `<div class="detail-empty">No activity yet.</div>` : ''}
           ${log.map(l => `<div class="log-row"><span class="log-time">${l.timestamp}</span><span class="log-text">${l.text}</span></div>`).join('')}
-          ${log.length === 0 ? `<div class="t-time">No activity yet.</div>` : ''}
         </div>
+
+        <div class="card collapsible-card">
+          <div class="collapsible-hdr" onclick="toggleMissionInfo()">
+            <span class="card-section-title" style="margin-bottom:0;">Mission info</span>
+            <span class="collapsible-chevron">${infoOpen ? '▲' : '▼'}</span>
+          </div>
+          ${infoOpen ? `
+          <div class="collapsible-body">
+            <div class="info-grid" style="margin-top:12px;">
+              <div class="info-cell"><div class="info-cell-label">Requesting agency</div><div class="info-cell-value">${m.agency}</div></div>
+              <div class="info-cell"><div class="info-cell-label">Agency POC</div><div class="info-cell-value">${m.poc}</div></div>
+              <div class="info-cell"><div class="info-cell-label">POC contact</div><div class="info-cell-value">${m.pocPhone}</div></div>
+              <div class="info-cell"><div class="info-cell-label">Created</div><div class="info-cell-value">${m.createdAt}</div></div>
+              ${m.baseName ? `<div class="info-cell"><div class="info-cell-label">Base location</div><div class="info-cell-value">${m.baseName}</div></div>` : ''}
+              ${m.baseCoords ? `<div class="info-cell"><div class="info-cell-label">USNG coords</div><div class="info-cell-value">${m.baseCoords}</div></div>` : ''}
+            </div>
+            ${m.description ? `<div style="margin-top:10px;font-size:13px;color:var(--text-2);line-height:1.6;">${m.description}</div>` : ''}
+          </div>` : ''}
+        </div>
+
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.4</div>`;
+  <div class="version-tag">v1.5</div>`;
 }
 
 /* ─── 4. New mission form ───────────────────────────────────────── */
@@ -913,7 +949,7 @@ function screenNewMission() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.4</div>`;
+  <div class="version-tag">v1.5</div>`;
 }
 
 /* ─── 5. Broadcast alert ────────────────────────────────────────── */
@@ -970,7 +1006,7 @@ function screenBroadcastAlert() {
       <button class="btn btn-green" onclick="navigate('mission-detail',{missionId:'${missionId}'})">Send alert to 24 members</button>
     </div>
   </div>
-  <div class="version-tag">v1.4</div>`;
+  <div class="version-tag">v1.5</div>`;
 }
 
 /* ─── 6. Member alert response ──────────────────────────────────── */
@@ -1065,7 +1101,7 @@ function screenMemberAlert() {
     </div>
     `}
   </div>
-  <div class="version-tag">v1.4</div>`;
+  <div class="version-tag">v1.5</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════
