@@ -356,8 +356,22 @@ function navigate(screen, params = {}) {
 const ICON_ARR  = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="#185FA5" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ICON_PIN  = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3C8.13 3 5 6.13 5 10c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="var(--text-2)" stroke-width="1.2" fill="none"/><circle cx="12" cy="10" r="3" stroke="var(--text-2)" stroke-width="1.2"/></svg>`;
 const ICON_CLK  = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#185FA5" stroke-width="1.2"/><path d="M7 4v3.5l2 1.5" stroke="#185FA5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const ICON_DISP = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="11" rx="2" stroke="#185FA5" stroke-width="1.2"/><path d="M7 18h6M10 14v4" stroke="#185FA5" stroke-width="1.2" stroke-linecap="round"/><path d="M6 8h8M6 11h5" stroke="#185FA5" stroke-width="1.2" stroke-linecap="round"/></svg>`;
-const ICON_MBR  = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="6" y="1" width="8" height="15" rx="2" stroke="#0F6E56" stroke-width="1.2"/><circle cx="10" cy="13" r="1" fill="#0F6E56"/><path d="M3 5L1.5 14M17 5l1.5 9" stroke="#0F6E56" stroke-width="1.2" stroke-linecap="round"/></svg>`;
+/* Dispatcher: headset icon — someone coordinating remotely */
+const ICON_DISP = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M6 14C6 9.58 9.58 6 14 6C18.42 6 22 9.58 22 14" stroke="#185FA5" stroke-width="1.6" stroke-linecap="round"/>
+  <rect x="4" y="13" width="4" height="6" rx="2" fill="#185FA5" opacity="0.18" stroke="#185FA5" stroke-width="1.4"/>
+  <rect x="20" y="13" width="4" height="6" rx="2" fill="#185FA5" opacity="0.18" stroke="#185FA5" stroke-width="1.4"/>
+  <path d="M22 19v1a4 4 0 01-4 4h-2" stroke="#185FA5" stroke-width="1.4" stroke-linecap="round"/>
+  <circle cx="15" cy="24" r="1.2" fill="#185FA5"/>
+</svg>`;
+
+/* Member: person with waypoint pin — someone moving to a location */
+const ICON_MBR  = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="11" cy="8" r="3.2" stroke="#0F6E56" stroke-width="1.5"/>
+  <path d="M4 22c0-3.87 3.13-7 7-7h.5" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M20 12c-2.21 0-4 1.79-4 4 0 3 4 7 4 7s4-4 4-7c0-2.21-1.79-4-4-4z" fill="#0F6E56" opacity="0.15" stroke="#0F6E56" stroke-width="1.4"/>
+  <circle cx="20" cy="16.2" r="1.4" fill="#0F6E56"/>
+</svg>`;
 
 /* ─── Topbar ────────────────────────────────────────────────────── */
 function renderTopbar(showNew = false) {
@@ -459,22 +473,33 @@ function mapWidget(pinned = false, coordLabel = '') {
 function screenEntry() {
   return `
   <div class="entry-wrap">
-    <div class="t-eyebrow" style="margin-bottom:10px;">Shenandoah Mountain Rescue Group</div>
-    <div style="font-size:26px;font-weight:700;color:var(--text-1);margin-bottom:6px;letter-spacing:-0.01em;">SAR Ops</div>
-    <div style="font-size:13px;color:var(--text-2);">Select your role for this session</div>
+    <div class="entry-identity">
+      <div class="entry-org">Shenandoah Mountain Rescue Group</div>
+      <div class="entry-wordmark">SAR Ops</div>
+      <div class="entry-rule"></div>
+      <div class="entry-prompt">Who are you today?</div>
+    </div>
     <div class="role-cards">
       <div class="role-card" onclick="selectRole('dispatcher')">
-        <div class="role-icon" style="background:var(--blue-bg);">${ICON_DISP}</div>
-        <div class="role-title">Dispatcher</div>
-        <div class="role-sub">Manage alerts and monitor team activity</div>
+        <div class="role-card-inner">
+          <div class="role-icon-wrap role-icon-blue">\${ICON_DISP}</div>
+          <div class="role-card-text">
+            <div class="role-title">Dispatcher</div>
+            <div class="role-sub">Manage alerts and monitor team activity</div>
+          </div>
+        </div>
       </div>
       <div class="role-card" onclick="selectRole('member')">
-        <div class="role-icon" style="background:var(--green-bg);">${ICON_MBR}</div>
-        <div class="role-title">Member</div>
-        <div class="role-sub">Receive alerts and report availability</div>
+        <div class="role-card-inner">
+          <div class="role-icon-wrap role-icon-green">\${ICON_MBR}</div>
+          <div class="role-card-text">
+            <div class="role-title">Member</div>
+            <div class="role-sub">Receive alerts and report availability</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="app-footer" style="margin-top:32px;">SAR Ops · v1.0</div>
+    <div class="entry-footer">SAR Ops · v1.1 · Shenandoah Mountain Rescue Group</div>
   </div>`;
 }
 
@@ -554,7 +579,7 @@ function screenMissionsList() {
       ${ICON_CLK} View past missions — March 2026 and earlier
     </div>
   </div>
-  <div class="version-tag">v1.0</div>`;
+  <div class="version-tag">v1.1</div>`;
 }
 
 /* ─── 3. Mission detail ─────────────────────────────────────────── */
@@ -672,7 +697,7 @@ function screenMissionDetail() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.0</div>`;
+  <div class="version-tag">v1.1</div>`;
 }
 
 /* ─── 4. New mission form ───────────────────────────────────────── */
@@ -757,7 +782,7 @@ function screenNewMission() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.0</div>`;
+  <div class="version-tag">v1.1</div>`;
 }
 
 /* ─── 5. Broadcast alert ────────────────────────────────────────── */
@@ -814,7 +839,7 @@ function screenBroadcastAlert() {
       <button class="btn btn-green" onclick="navigate('mission-detail',{missionId:'${missionId}'})">Send alert to 24 members</button>
     </div>
   </div>
-  <div class="version-tag">v1.0</div>`;
+  <div class="version-tag">v1.1</div>`;
 }
 
 /* ─── 6. Member alert response ──────────────────────────────────── */
@@ -909,7 +934,7 @@ function screenMemberAlert() {
     </div>
     `}
   </div>
-  <div class="version-tag">v1.0</div>`;
+  <div class="version-tag">v1.1</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════
