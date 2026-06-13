@@ -613,7 +613,7 @@ function screenEntry() {
         </div>
       </div>
     </div>
-    <div class="entry-footer">SAR Ops · v1.6 · Shenandoah Mountain Rescue Group</div>
+    <div class="entry-footer">SAR Ops · v1.7 · Shenandoah Mountain Rescue Group</div>
   </div>`;
 }
 
@@ -710,7 +710,7 @@ function screenMissionsList() {
       ${ICON_CLK} View past missions — March 2026 and earlier
     </div>
   </div>
-  <div class="version-tag">v1.6</div>`;
+  <div class="version-tag">v1.7</div>`;
 }
 
 /* ─── 3. Mission detail ─────────────────────────────────────────── */
@@ -736,7 +736,7 @@ function screenMissionDetail() {
   const dispatch = rs.filter(r => r.availability === 'dispatch');
   const unavail  = rs.filter(r => r.availability === 'unavailable');
   const noresp   = rs.filter(r => r.availability === 'no_response');
-  const log      = getLog(m.id);
+  const log      = [...getLog(m.id)].reverse(); // newest first
   const msnNum   = m.id.replace('msn-','2026-');
   const allNudged      = noresp.length > 0 && noresp.every(r => APP.nudged[r.memberId]);
   const noRespExpanded = !!APP.noRespExpanded;
@@ -759,11 +759,10 @@ function screenMissionDetail() {
   }
 
   function statCard(n, label, numClass) {
-    return `<div class="stat-box"><div class="stat-n ${numClass}">${n}</div><div class="stat-l">${label}</div></div>`;
+    return `<div class="detail-stat-card"><div class="stat-n ${numClass}">${n}</div><div class="stat-l">${label}</div></div>`;
   }
 
-  // Not yet responded — show limited by default, expand on demand
-  const noRespVisible = noRespExpanded ? noresp : noresp.slice(0, NORESP_LIMIT);
+  const noRespVisible  = noRespExpanded ? noresp : noresp.slice(0, NORESP_LIMIT);
   const noRespOverflow = noresp.length - NORESP_LIMIT;
 
   let noRespContent = '';
@@ -787,18 +786,21 @@ function screenMissionDetail() {
   ])}
   <div class="page detail-page">
 
-    <!-- Mission header -->
+    <!-- Mission header card -->
     <div class="card" style="margin-bottom:12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <span style="font-size:12px;color:var(--text-3);">#${msnNum} &nbsp;·&nbsp; ${m.createdAt}</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:12px;color:var(--text-3);">#${msnNum}</span>
         ${statusPill(m.status)}
       </div>
+
       <div style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:6px;">${m.title}</div>
-      <div style="font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:10px;">
-        <b>Agency:</b> ${m.agency} &nbsp;·&nbsp; <b>POC:</b> ${m.poc} · ${m.pocPhone}
-        ${m.baseName ? `<br><b>Base:</b> ${m.baseName}${m.baseAddress ? ', '+m.baseAddress:''}` : ''}
+
+      ${m.description ? `<div style="font-size:14px;color:var(--text-2);line-height:1.65;margin-bottom:10px;">${m.description}</div>` : ''}
+
+      <div style="font-size:13px;color:var(--text-2);line-height:1.8;">
+        <b>Agency:</b> ${m.agency} &nbsp;·&nbsp; <b>POC:</b> ${m.poc} · ${m.pocPhone}${m.baseName ? ` &nbsp;·&nbsp; <b>Base:</b> ${m.baseName}${m.baseAddress ? ', '+m.baseAddress:''}` : ''} &nbsp;·&nbsp; <b>Activated:</b> ${m.createdAt}
       </div>
-      ${m.description ? `<div class="mission-description">${m.description}</div>` : ''}
+
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
         ${m.status !== 'closed' ? `<button class="btn btn-green btn-sm" onclick="navigate('broadcast-alert',{missionId:'${m.id}'})">Send activation alert</button>` : ''}
         <button class="btn btn-sm">Edit mission</button>
@@ -806,8 +808,8 @@ function screenMissionDetail() {
       </div>
     </div>
 
-    <!-- Summary stats -->
-    <div class="mission-stats" style="margin-bottom:14px;">
+    <!-- Summary stats — white card surface -->
+    <div class="detail-stats-row" style="margin-bottom:14px;">
       ${statCard(counts.search,      'Available for search',   'grn')}
       ${statCard(counts.dispatch,    'Available for dispatch', 'blu')}
       ${statCard(counts.unavailable, 'Unavailable',            'red')}
@@ -847,13 +849,15 @@ function screenMissionDetail() {
       <div class="detail-secondary">
         <div class="card">
           <div class="card-section-title">Activity log</div>
-          ${log.length === 0 ? `<div class="detail-empty">No activity yet.</div>` : log.map(l => `<div class="log-row"><span class="log-time">${l.timestamp}</span><span class="log-text">${l.text}</span></div>`).join('')}
+          ${log.length === 0
+            ? `<div class="detail-empty">No activity yet.</div>`
+            : log.map(l => `<div class="log-row"><span class="log-time">${l.timestamp}</span><span class="log-text">${l.text}</span></div>`).join('')}
         </div>
       </div>
 
     </div>
   </div>
-  <div class="version-tag">v1.6</div>`;
+  <div class="version-tag">v1.7</div>`;
 }
 
 /* ─── 4. New mission form ───────────────────────────────────────── */
@@ -938,7 +942,7 @@ function screenNewMission() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.6</div>`;
+  <div class="version-tag">v1.7</div>`;
 }
 
 /* ─── 5. Broadcast alert ────────────────────────────────────────── */
@@ -995,7 +999,7 @@ function screenBroadcastAlert() {
       <button class="btn btn-green" onclick="navigate('mission-detail',{missionId:'${missionId}'})">Send alert to 24 members</button>
     </div>
   </div>
-  <div class="version-tag">v1.6</div>`;
+  <div class="version-tag">v1.7</div>`;
 }
 
 /* ─── 6. Member alert response ──────────────────────────────────── */
@@ -1090,7 +1094,7 @@ function screenMemberAlert() {
     </div>
     `}
   </div>
-  <div class="version-tag">v1.6</div>`;
+  <div class="version-tag">v1.7</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════

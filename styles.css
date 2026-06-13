@@ -408,7 +408,7 @@ textarea { resize: vertical; line-height: 1.5; }
 .version-tag { position: fixed; bottom: 8px; right: 12px; font-size: 10px; color: var(--text-3); pointer-events: none; }
 
 /* ─── Detail page layout ───────────────────────────────────────── */
-.detail-page { max-width: 1100px; }
+.detail-page { max-width: 900px; }
 
 /* 12-col grid: 8 primary + 4 secondary */
 .detail-grid {
@@ -462,11 +462,15 @@ textarea { resize: vertical; line-height: 1.5; }
 .collapsible-chevron { font-size: 11px; color: var(--text-3); }
 .collapsible-body { }
 
-/* Mission description in header */
-.mission-description {
-  font-size: 14px; color: var(--text-1); line-height: 1.65;
-  background: var(--bg-subtle); border-radius: var(--radius-md);
-  padding: 10px 12px; border-left: 3px solid var(--border-md);
+/* Detail page stat cards — white card surface matching page cards */
+.detail-stats-row {
+  display: flex; gap: 6px;
+}
+.detail-stat-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px; text-align: center; flex: 1;
 }
 
 /* Expand/collapse control for long lists */
