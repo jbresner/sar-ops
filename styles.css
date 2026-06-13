@@ -473,6 +473,33 @@ textarea { resize: vertical; line-height: 1.5; }
   padding: 10px 12px; text-align: center; flex: 1;
 }
 
+/* ─── Member missions list ─────────────────────────────────────── */
+.member-mission-card {
+  background: var(--bg-card); border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 14px 16px;
+  cursor: pointer; margin-bottom: 8px;
+  transition: border-color 0.12s;
+}
+.member-mission-card:hover { border-color: var(--border-md); box-shadow: var(--shadow-sm); }
+.member-mission-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.member-mission-info { flex: 1; min-width: 0; }
+.member-mission-title { font-size: 14px; font-weight: 600; color: var(--text-1); margin-bottom: 3px; }
+.member-mission-meta  { font-size: 12px; color: var(--text-2); }
+
+/* Member response status bar */
+.member-mission-status {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: var(--radius-md);
+  font-size: 12px; font-weight: 500;
+}
+.mmr-required { background: #FFF7ED; color: #92400E; border: 0.5px solid #FCD38D; }
+.mmr-search   { background: var(--green-bg); color: var(--green-dk); border: 0.5px solid #8ECEB8; }
+.mmr-dispatch { background: var(--blue-bg);  color: var(--blue);     border: 0.5px solid #9BC3E8; }
+.mmr-unavail  { background: var(--red-bg);   color: var(--red);      border: 0.5px solid #E8A0A0; }
+.mmr-label  { font-weight: 600; }
+.mmr-sub    { font-weight: 400; color: inherit; opacity: 0.75; }
+.mmr-sub::before { content: '·'; margin-right: 6px; }
+
 /* Member response option cards */
 .member-resp-opts { display: flex; flex-direction: column; gap: 8px; }
 .member-resp-opt {

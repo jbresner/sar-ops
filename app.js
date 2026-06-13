@@ -12,7 +12,7 @@ const APP = {
   params: {},
   nudged: {},
   gearChecked: {},
-  memberResponseDraft: { availability: null, transport: null, needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', submitted: false },
+  memberResponses: {},  // keyed by missionId, each: { availability, transport, needsRide, eta, vehicle, departureTime, submitted }
   mapPin: null,
 };
 
@@ -1002,29 +1002,100 @@ function screenBroadcastAlert() {
   <div class="version-tag">v1.8</div>`;
 }
 
-/* ─── 6. Member alert response ──────────────────────────────────── */
+/* ─── 6. Member missions list ───────────────────────────────────── */
+function screenMemberMissions() {
+  const activeMissions = MISSIONS.filter(m => m.status === 'active' || m.status === 'standby');
+
+  function getMemberResp(missionId) {
+    return APP.memberResponses[missionId] || null;
+  }
+
+  function respStatusLabel(resp) {
+    if (!resp) return { label: 'Response required', sub: '', cls: 'mmr-required' };
+    if (resp.availability === 'search') {
+      const sub = resp.transport === 'ride' ? 'Needs ride' : resp.eta ? 'ETA ' + resp.eta : 'Can drive';
+      return { label: 'Available for search', sub, cls: 'mmr-search' };
+    }
+    if (resp.availability === 'dispatch') return { label: 'Available for dispatch', sub: 'Remote support', cls: 'mmr-dispatch' };
+    if (resp.availability === 'unavailable') return { label: 'Unavailable', sub: '', cls: 'mmr-unavail' };
+    return { label: 'Response required', sub: '', cls: 'mmr-required' };
+  }
+
+  // Sort: no response first, then search, dispatch, unavailable
+  const ORDER = { required: 0, search: 1, dispatch: 2, unavailable: 3 };
+  const sorted = [...activeMissions].sort((a, b) => {
+    const ra = getMemberResp(a.id), rb = getMemberResp(b.id);
+    const ka = ra ? ra.availability : 'required';
+    const kb = rb ? rb.availability : 'required';
+    return (ORDER[ka] ?? 4) - (ORDER[kb] ?? 4);
+  });
+
+  function missionCard(m) {
+    const resp = getMemberResp(m.id);
+    const { label, sub, cls } = respStatusLabel(resp);
+    return `
+    <div class="member-mission-card" onclick="navigate('member-alert',{missionId:'${m.id}'})">
+      <div class="member-mission-card-top">
+        <div class="member-mission-info">
+          <div class="member-mission-title">${m.title}</div>
+          <div class="member-mission-meta">${m.agency} &nbsp;·&nbsp; ${m.location.split('·')[0].trim()}</div>
+        </div>
+        ${statusPill(m.status)}
+      </div>
+      <div class="member-mission-status ${cls}">
+        <span class="mmr-label">${label}</span>
+        ${sub ? `<span class="mmr-sub">${sub}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  return `
+  ${renderTopbar()}
+  ${bc([{label:'Home',screen:'entry'},{label:'Active missions'}])}
+  <div class="page" style="max-width:560px;">
+    <div class="page-hdr">
+      <div class="page-title">Active missions</div>
+      <div class="page-sub">Shenandoah Mountain Rescue Group · ${sorted.length} mission${sorted.length!==1?'s':''} active</div>
+    </div>
+    ${sorted.length === 0
+      ? `<div class="card" style="text-align:center;padding:32px;color:var(--text-3);">No active missions at this time.</div>`
+      : sorted.map(missionCard).join('')
+    }
+  </div>
+  <div class="version-tag">v1.9</div>`;
+}
+
+/* ─── 7. Member alert / response ────────────────────────────────── */
+function getMissionDraft(missionId) {
+  if (!APP.memberResponses[missionId]) {
+    APP.memberResponses[missionId] = { availability: null, transport: null, needsRide: false, departureTime: '', eta: '', vehicle: '', submitted: false };
+  }
+  return APP.memberResponses[missionId];
+}
+
 function screenMemberAlert() {
   const { missionId } = APP.params;
-  const m = getMission(missionId || 'msn-047');
-  const draft = APP.memberResponseDraft;
-  const msnNum = (m ? m.id : 'msn-047').replace('msn-','2026-');
+  const m     = getMission(missionId || 'msn-047');
+  const mid   = m ? m.id : 'msn-047';
+  const draft = getMissionDraft(mid);
+  const msnNum = mid.replace('msn-','2026-');
   const av     = draft.availability;
-  const trans  = draft.transport; // 'drive' | 'ride' | null
+  const trans  = draft.transport;
 
-  // Submitted confirmation state
+  // Confirmation state
   if (draft.submitted) {
     const avLabel = av === 'search'
-      ? (trans === 'ride' ? 'Available for search · Needs a ride' : 'Available for search · Driving')
+      ? (trans === 'ride' ? 'Available for search · Needs a ride' : 'Available for search · Can drive')
       : av === 'dispatch' ? 'Available for dispatch'
       : 'Unavailable';
     return `
   ${renderTopbar()}
+  ${bc([{label:'Home',screen:'entry'},{label:'Active missions',screen:'member-missions'},{label:'#'+msnNum}])}
   <div class="page" style="max-width:560px;">
     <div class="page-hdr">
       <div class="page-title">Response sent</div>
       <div class="page-sub">#${msnNum} · ${m ? m.title : ''}</div>
     </div>
-
     <div class="card" style="margin-bottom:10px;">
       <div style="display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:12px;border-bottom:0.5px solid var(--border);">
         <div style="width:36px;height:36px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -1038,29 +1109,27 @@ function screenMemberAlert() {
       </div>
       <div style="font-size:13px;color:var(--text-2);">Your response has been received. The dispatcher will be in touch if your assignment changes.</div>
     </div>
-
     <div style="display:flex;gap:8px;">
-      <button class="btn btn-sm" onclick="navigate('mission-detail',{missionId:'${m ? m.id : 'msn-047'}'})" style="flex:1;">View mission</button>
-      <button class="btn btn-sm" onclick="resetMemberDraft();render();" style="flex:1;">Update my response</button>
+      <button class="btn btn-sm" onclick="navigate('member-missions')" style="flex:1;">Back to missions</button>
+      <button class="btn btn-sm" onclick="editMemberResponse('${mid}')" style="flex:1;">Update my response</button>
     </div>
   </div>
-  <div class="version-tag">v1.8</div>`;
+  <div class="version-tag">v1.9</div>`;
   }
 
-  // Show transport fields for 'drive', hide for 'ride'
   const showTransportFields = av === 'search' && trans === 'drive';
   const showRideMessage     = av === 'search' && trans === 'ride';
   const readyToSubmit       = av === 'dispatch' || av === 'unavailable' || (av === 'search' && trans !== null);
 
   return `
   ${renderTopbar()}
+  ${bc([{label:'Home',screen:'entry'},{label:'Active missions',screen:'member-missions'},{label:'#'+msnNum}])}
   <div class="page" style="max-width:560px;">
     <div class="page-hdr">
       <div class="page-title">Mission alert</div>
       <div class="page-sub">#${msnNum}</div>
     </div>
 
-    <!-- Full mission summary — no truncation -->
     <div class="card" style="margin-bottom:12px;">
       <div style="font-size:15px;font-weight:600;color:var(--text-1);margin-bottom:6px;">${m ? m.title : 'SAR Activation'}</div>
       ${m && m.description ? `<div style="font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:10px;">${m.description}</div>` : ''}
@@ -1071,42 +1140,38 @@ function screenMemberAlert() {
       </div>
     </div>
 
-    <!-- Step 1: Availability -->
     <div class="card" style="margin-bottom:10px;">
       <div class="card-section-title" style="margin-bottom:12px;">Can you respond?</div>
-
       <div class="member-resp-opts">
-        <div class="member-resp-opt ${av==='search'?'selected':''}" onclick="setMemberAvail('search')">
+        <div class="member-resp-opt ${av==='search'?'selected':''}" onclick="setMemberAvailForMission('${mid}','search')">
           <div class="member-resp-opt-title">Available for search</div>
           <div class="member-resp-opt-sub">I can respond and go to the field</div>
         </div>
-        <div class="member-resp-opt ${av==='dispatch'?'selected':''}" onclick="setMemberAvail('dispatch')">
+        <div class="member-resp-opt ${av==='dispatch'?'selected':''}" onclick="setMemberAvailForMission('${mid}','dispatch')">
           <div class="member-resp-opt-title">Available for dispatch</div>
           <div class="member-resp-opt-sub">I can support remotely</div>
         </div>
-        <div class="member-resp-opt ${av==='unavailable'?'selected':''}" onclick="setMemberAvail('unavailable')">
+        <div class="member-resp-opt ${av==='unavailable'?'selected':''}" onclick="setMemberAvailForMission('${mid}','unavailable')">
           <div class="member-resp-opt-title">Unavailable</div>
           <div class="member-resp-opt-sub">I cannot participate in this mission</div>
         </div>
       </div>
 
-      <!-- Step 2: Transport (search only) -->
       ${av === 'search' ? `
       <div class="divider"></div>
       <div class="card-section-title" style="margin-bottom:12px;">Transportation</div>
       <div class="member-resp-opts">
-        <div class="member-resp-opt ${trans==='drive'?'selected':''}" onclick="setMemberTransport('drive')">
+        <div class="member-resp-opt ${trans==='drive'?'selected':''}" onclick="setMemberTransportForMission('${mid}','drive')">
           <div class="member-resp-opt-title">I can drive</div>
           <div class="member-resp-opt-sub">I have my own vehicle and can depart</div>
         </div>
-        <div class="member-resp-opt ${trans==='ride'?'selected':''}" onclick="setMemberTransport('ride')">
+        <div class="member-resp-opt ${trans==='ride'?'selected':''}" onclick="setMemberTransportForMission('${mid}','ride')">
           <div class="member-resp-opt-title">I need a ride</div>
           <div class="member-resp-opt-sub">I need transportation to the base location</div>
         </div>
       </div>
       ` : ''}
 
-      <!-- Step 3: Travel details (drive only) -->
       ${showTransportFields ? `
       <div class="divider"></div>
       <div class="card-section-title" style="margin-bottom:12px;">Travel details</div>
@@ -1129,7 +1194,6 @@ function screenMemberAlert() {
       </div>
       ` : ''}
 
-      <!-- Ride message -->
       ${showRideMessage ? `
       <div class="divider"></div>
       <div style="font-size:13px;color:var(--text-2);line-height:1.6;padding:4px 0;">
@@ -1139,12 +1203,11 @@ function screenMemberAlert() {
 
       ${readyToSubmit ? `
       <div class="divider"></div>
-      <button class="btn btn-green" style="width:100%;" onclick="submitMemberResponse()">Send to dispatcher</button>
+      <button class="btn btn-green" style="width:100%;" onclick="submitMemberResponseForMission('${mid}')">Send to dispatcher</button>
       ` : ''}
-
     </div>
   </div>
-  <div class="version-tag">v1.8</div>`;
+  <div class="version-tag">v1.9</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1155,7 +1218,7 @@ function selectRole(role) {
   APP.currentUser = role === 'dispatcher'
     ? { id: 'm1', name: 'Alex (you)', initials: 'AL', avatarColor: 'av-blue', role: 'dispatcher' }
     : { id: 'm5', name: 'Jordan B.', initials: 'JB', avatarColor: 'av-purple', role: 'member' };
-  navigate(role === 'dispatcher' ? 'missions-list' : 'member-alert', { missionId: 'msn-047' });
+  navigate(role === 'dispatcher' ? 'missions-list' : 'member-missions');
 }
 
 function nudgeMember(memberId) {
@@ -1179,35 +1242,38 @@ function clearMapPin() {
   render();
 }
 
-function setMemberAvail(val) {
-  APP.memberResponseDraft.availability = val;
-  APP.memberResponseDraft.transport = null; // reset transport when availability changes
+function setMemberAvailForMission(missionId, val) {
+  const d = getMissionDraft(missionId);
+  d.availability = val;
+  d.transport = null;
   render();
 }
 
-function setMemberTransport(val) {
-  APP.memberResponseDraft.transport = val;
+function setMemberTransportForMission(missionId, val) {
+  getMissionDraft(missionId).transport = val;
   render();
 }
 
-function resetMemberDraft() {
-  APP.memberResponseDraft = { availability: null, transport: null, needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', submitted: false };
+function editMemberResponse(missionId) {
+  getMissionDraft(missionId).submitted = false;
+  render();
 }
 
-function submitMemberResponse() {
+function submitMemberResponseForMission(missionId) {
+  const d = getMissionDraft(missionId);
   const eta     = document.getElementById('mb-eta');
   const depart  = document.getElementById('mb-depart');
   const vehicle = document.getElementById('mb-vehicle');
-  if (eta)     APP.memberResponseDraft.eta           = eta.value;
-  if (depart)  APP.memberResponseDraft.departureTime = depart.value;
-  if (vehicle) APP.memberResponseDraft.vehicle       = vehicle.value;
-  APP.memberResponseDraft.needsRide          = APP.memberResponseDraft.transport === 'ride';
-  APP.memberResponseDraft.canTakePassengers  = false;
-  APP.memberResponseDraft.submitted          = true;
+  if (eta)     d.eta           = eta.value;
+  if (depart)  d.departureTime = depart.value;
+  if (vehicle) d.vehicle       = vehicle.value;
+  d.needsRide         = d.transport === 'ride';
+  d.canTakePassengers = false;
+  d.submitted         = true;
   render();
 }
 
-function toggleGear(idx, row) {
+function toggleGear(idx) {
   APP.gearChecked[idx] = !APP.gearChecked[idx];
   render();
 }
@@ -1223,6 +1289,7 @@ function render() {
     case 'mission-detail':  root.innerHTML = screenMissionDetail(); break;
     case 'new-mission':     root.innerHTML = screenNewMission(); break;
     case 'broadcast-alert': root.innerHTML = screenBroadcastAlert(); break;
+    case 'member-missions': root.innerHTML = screenMemberMissions(); break;
     case 'member-alert':    root.innerHTML = screenMemberAlert(); break;
     default:                root.innerHTML = screenEntry();
   }
