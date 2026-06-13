@@ -1006,54 +1006,69 @@ function screenBroadcastAlert() {
 function screenMemberMissions() {
   const activeMissions = MISSIONS.filter(m => m.status === 'active' || m.status === 'standby');
 
-  function getMemberResp(missionId) {
-    return APP.memberResponses[missionId] || null;
+  function getResp(missionId) {
+    const r = APP.memberResponses[missionId];
+    return (r && r.submitted) ? r : null;
   }
 
-  function respStatusLabel(resp) {
-    if (!resp || !resp.submitted) return { label: 'Response required', sub: '', cls: 'mmr-required' };
+  function respText(resp) {
+    if (!resp) return '';
     if (resp.availability === 'search') {
-      const sub = resp.transport === 'ride' ? 'Needs ride' : 'Can drive';
-      return { label: 'Available for search', sub, cls: 'mmr-search' };
+      const t = resp.transport === 'ride' ? 'Needs ride' : 'Can drive';
+      const eta = resp.eta ? ` · ETA ${resp.eta}` : '';
+      return `Available for search · ${t}${eta}`;
     }
-    if (resp.availability === 'dispatch') return { label: 'Available for dispatch', sub: '', cls: 'mmr-dispatch' };
-    if (resp.availability === 'unavailable') return { label: 'Unavailable', sub: '', cls: 'mmr-unavail' };
-    return { label: 'Response required', sub: '', cls: 'mmr-required' };
+    if (resp.availability === 'dispatch') return 'Available for dispatch';
+    if (resp.availability === 'unavailable') return 'Unavailable';
+    return '';
   }
 
-  // Sort: no response first, then search, dispatch, unavailable
-  const ORDER = { required: 0, search: 1, dispatch: 2, unavailable: 3 };
-  const sorted = [...activeMissions].sort((a, b) => {
-    const ra = getMemberResp(a.id), rb = getMemberResp(b.id);
-    const ka = (ra && ra.submitted) ? ra.availability : 'required';
-    const kb = (rb && rb.submitted) ? rb.availability : 'required';
-    return (ORDER[ka] ?? 4) - (ORDER[kb] ?? 4);
-  });
+  const needsResponse = activeMissions.filter(m => !getResp(m.id));
+  const hasResponse   = activeMissions.filter(m =>  getResp(m.id));
 
-  function missionCard(m) {
-    const resp = getMemberResp(m.id);
-    const { label, sub, cls } = respStatusLabel(resp);
-    // Location: strip agency part (after ·) for cleaner display
-    const locationName = m.location.split('·')[0].trim();
+  function cardMeta(m) {
+    const loc = m.location.split('·')[0].trim();
     return `
-    <div class="member-mission-card" onclick="navigate('member-alert',{missionId:'${m.id}'})">
+      ${m.description ? `<div class="member-mission-desc">${m.description}</div>` : ''}
+      <div class="member-mission-meta">
+        <span>${m.agency}</span><span class="mmeta-dot">·</span><span>${loc}</span>
+      </div>
+      <div class="member-mission-time">Activated ${m.createdAt}</div>`;
+  }
+
+  function pendingCard(m) {
+    return `
+    <div class="member-mission-card mmc-pending" onclick="navigate('member-alert',{missionId:'${m.id}'})">
       <div class="member-mission-card-top">
         <div class="member-mission-title">${m.title}</div>
         ${statusPill(m.status)}
       </div>
-      ${m.description ? `<div class="member-mission-desc">${m.description}</div>` : ''}
-      <div class="member-mission-meta">
-        <span>${m.agency}</span>
-        <span class="mmeta-dot">·</span>
-        <span>${locationName}</span>
-      </div>
-      <div class="member-mission-time">Activated ${m.createdAt}</div>
-      <div class="member-mission-status ${cls}">
-        <span class="mmr-label">${label}</span>
-        ${sub ? `<span class="mmr-sub">${sub}</span>` : ''}
+      ${cardMeta(m)}
+      <div class="mmc-action-row">
+        <span class="mmc-respond-cta">Respond</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7 3l4 4-4 4" stroke="var(--blue)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
     </div>`;
   }
+
+  function respondedCard(m) {
+    const resp = getResp(m.id);
+    const statusStr = respText(resp);
+    return `
+    <div class="member-mission-card mmc-responded" onclick="navigate('member-alert',{missionId:'${m.id}'})">
+      <div class="member-mission-card-top">
+        <div class="member-mission-title">${m.title}</div>
+        ${statusPill(m.status)}
+      </div>
+      ${cardMeta(m)}
+      <div class="mmc-responded-row">
+        <span class="mmc-status-text">${statusStr}</span>
+        <span class="mmc-edit-cta">Edit response</span>
+      </div>
+    </div>`;
+  }
+
+  const total = activeMissions.length;
 
   return `
   ${renderTopbar()}
@@ -1061,14 +1076,23 @@ function screenMemberMissions() {
   <div class="page" style="max-width:600px;">
     <div class="page-hdr">
       <div class="page-title">Active missions</div>
-      <div class="page-sub">Shenandoah Mountain Rescue Group · ${sorted.length} mission${sorted.length!==1?'s':''} active</div>
+      <div class="page-sub">Shenandoah Mountain Rescue Group · ${total} mission${total!==1?'s':''} active</div>
     </div>
-    ${sorted.length === 0
-      ? `<div class="card" style="text-align:center;padding:32px;color:var(--text-3);">No active missions at this time.</div>`
-      : sorted.map(missionCard).join('')
-    }
+
+    ${total === 0 ? `<div class="card" style="text-align:center;padding:32px;color:var(--text-3);">No active missions at this time.</div>` : ''}
+
+    ${needsResponse.length > 0 ? `
+    <div class="t-section" style="margin-bottom:8px;">Response required</div>
+    ${needsResponse.map(pendingCard).join('')}
+    ` : ''}
+
+    ${hasResponse.length > 0 ? `
+    <div class="t-section" style="margin-top:${needsResponse.length>0?'20px':'0'};margin-bottom:8px;">Your responses</div>
+    ${hasResponse.map(respondedCard).join('')}
+    ` : ''}
+
   </div>
-  <div class="version-tag">v2.0</div>`;
+  <div class="version-tag">v2.1</div>`;
 }
 
 /* ─── 7. Member alert / response ────────────────────────────────── */
@@ -1120,7 +1144,7 @@ function screenMemberAlert() {
       <button class="btn btn-sm" onclick="editMemberResponse('${mid}')" style="flex:1;">Update my response</button>
     </div>
   </div>
-  <div class="version-tag">v2.0</div>`;
+  <div class="version-tag">v2.1</div>`;
   }
 
   const showTransportFields = av === 'search' && trans === 'drive';
@@ -1189,12 +1213,12 @@ function screenMemberAlert() {
         <div class="field-lbl">Departure &amp; ETA</div>
         <div class="row2">
           <div>
-            <div style="font-size:12px;color:var(--text-3);margin-bottom:4px;">Departs</div>
-            <input type="time" id="mb-depart" value="${draft.departureTime}">
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:4px;">Departs (24-hr)</div>
+            <input type="time" id="mb-depart" value="${draft.departureTime}" step="60">
           </div>
           <div>
-            <div style="font-size:12px;color:var(--text-3);margin-bottom:4px;">ETA at base</div>
-            <input type="time" id="mb-eta" value="${draft.eta}">
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:4px;">ETA at base (24-hr)</div>
+            <input type="time" id="mb-eta" value="${draft.eta}" step="60">
           </div>
         </div>
       </div>
@@ -1213,7 +1237,7 @@ function screenMemberAlert() {
       ` : ''}
     </div>
   </div>
-  <div class="version-tag">v2.0</div>`;
+  <div class="version-tag">v2.1</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════
