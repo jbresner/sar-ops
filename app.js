@@ -504,21 +504,44 @@ function screenEntry() {
 }
 
 /* ─── 2. Missions list ──────────────────────────────────────────── */
+// Filter state lives on APP so pills can toggle it
+if (!APP.missionFilter) APP.missionFilter = 'all';
+
+function setMissionFilter(f) {
+  APP.missionFilter = f;
+  render();
+}
+
 function screenMissionsList() {
-  const active    = MISSIONS.filter(m => m.status === 'active');
-  const standby   = MISSIONS.filter(m => m.status === 'standby');
-  const suspended = MISSIONS.filter(m => m.status === 'suspended');
-  const closed    = MISSIONS.filter(m => m.status === 'closed');
+  const allMissions = MISSIONS;
+  const f = APP.missionFilter;
+
+  const active    = allMissions.filter(m => m.status === 'active');
+  const standby   = allMissions.filter(m => m.status === 'standby');
+  const suspended = allMissions.filter(m => m.status === 'suspended');
+  const closed    = allMissions.filter(m => m.status === 'closed');
+
+  const showActive    = f === 'all' || f === 'active';
+  const showStandby   = f === 'all' || f === 'standby';
+  const showSuspended = f === 'all' || f === 'suspended';
+  const showClosed    = f === 'all' || f === 'closed';
+
+  function filterBtn(label, value) {
+    const isOn = f === value;
+    return `<div class="filter-btn ${isOn ? 'on' : ''}" onclick="setMissionFilter('${value}')">${label}</div>`;
+  }
 
   function activeRow(m) {
     const c = getCounts(m.id);
+    const timeLabel = m.status === 'active' ? 'Activated' : m.status === 'standby' ? 'Pre-callout' : 'Updated';
     return `
     <div class="mission-row" onclick="navigate('mission-detail',{missionId:'${m.id}'})">
       <div class="mission-row-top">
         <div class="mission-row-left">
-          <div class="mission-name">${m.title}</div>
+          <div class="mission-name ml-clickable">${m.title}</div>
           <div class="mission-loc">${m.location}</div>
-          <div class="mission-time">${m.status === 'active' ? 'Activated' : m.status === 'standby' ? 'Pre-callout' : 'Updated'} ${m.createdAt}</div>
+          <div class="mission-time">${timeLabel} ${m.createdAt}</div>
+          <div class="mission-time">Updated ${m.updatedAt}</div>
           ${m.suspendReason ? `<div class="suspend-note">${m.suspendReason}</div>` : ''}
         </div>
         ${statusPill(m.status)}
@@ -530,24 +553,18 @@ function screenMissionsList() {
           <div class="stat-box"><div class="stat-n red">${c.unavailable}</div><div class="stat-l">Unavailable</div></div>
           <div class="stat-box"><div class="stat-n gry">${c.no_response}</div><div class="stat-l">Not yet responded</div></div>
         </div>
-        <div class="mission-foot">
-          <span class="t-time">Updated ${m.updatedAt}</span>
-          <span class="view-link">View mission ${ICON_ARR}</span>
-        </div>
       </div>
     </div>`;
   }
 
   function closedRow(m) {
+    const msnNum = m.id.replace('msn-','2026-');
     return `
     <div class="closed-row" onclick="navigate('mission-detail',{missionId:'${m.id}'})">
       <div class="closed-left">
-        <div class="closed-name">${m.title}</div>
-        <div class="closed-meta">${m.location} · #${m.id.replace('msn-','2026-')}</div>
-      </div>
-      <div class="closed-right">
-        <span class="t-time">Closed ${m.updatedAt}</span>
-        <span class="view-link">View mission ${ICON_ARR}</span>
+        <div class="closed-name ml-clickable">${m.title}</div>
+        <div class="closed-meta">${m.location} · #${msnNum}</div>
+        <div class="closed-meta" style="margin-top:2px;">Closed ${m.updatedAt}</div>
       </div>
     </div>`;
   }
@@ -562,18 +579,18 @@ function screenMissionsList() {
         <div class="page-sub">Shenandoah Mountain Rescue Group</div>
       </div>
       <div class="filters">
-        <div class="filter-btn on">All</div>
-        <div class="filter-btn">Active</div>
-        <div class="filter-btn">Standby</div>
-        <div class="filter-btn">Suspended</div>
-        <div class="filter-btn">Closed</div>
+        ${filterBtn('All','all')}
+        ${filterBtn('Active','active')}
+        ${filterBtn('Standby','standby')}
+        ${filterBtn('Suspended','suspended')}
+        ${filterBtn('Closed','closed')}
       </div>
     </div>
 
-    ${active.length ? `<div class="t-section">Active</div>${active.map(activeRow).join('')}` : ''}
-    ${standby.length ? `<div class="t-section" style="margin-top:16px;">Standby</div>${standby.map(activeRow).join('')}` : ''}
-    ${suspended.length ? `<div class="t-section" style="margin-top:16px;">Suspended</div>${suspended.map(activeRow).join('')}` : ''}
-    ${closed.length ? `<div class="t-section" style="margin-top:16px;">Closed</div>${closed.map(closedRow).join('')}` : ''}
+    ${showActive && active.length ? `<div class="t-section">Active</div>${active.map(activeRow).join('')}` : ''}
+    ${showStandby && standby.length ? `<div class="t-section" style="margin-top:16px;">Standby</div>${standby.map(activeRow).join('')}` : ''}
+    ${showSuspended && suspended.length ? `<div class="t-section" style="margin-top:16px;">Suspended</div>${suspended.map(activeRow).join('')}` : ''}
+    ${showClosed && closed.length ? `<div class="t-section" style="margin-top:16px;">Closed</div>${closed.map(closedRow).join('')}` : ''}
 
     <div class="past-link" style="margin-top:16px;">
       ${ICON_CLK} View past missions — March 2026 and earlier
