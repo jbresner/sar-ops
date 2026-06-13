@@ -42,6 +42,7 @@ const MEMBERS = [
   { id: 'm22', name: 'P. Scott',       initials: 'PS', avatarColor: 'av-gray',   role: 'member' },
   { id: 'm23', name: 'R. Ahmed',       initials: 'RA', avatarColor: 'av-gray',   role: 'member' },
   { id: 'm24', name: 'S. Clark',       initials: 'SC', avatarColor: 'av-gray',   role: 'member' },
+  { id: 'm25', name: 'T. Quinn',        initials: 'TQ', avatarColor: 'av-gray',   role: 'member' },
 ];
 
 const MISSIONS = [
@@ -218,63 +219,179 @@ const MISSIONS = [
   },
 ];
 
-/* Responses — one entry per member per mission */
+/* Responses — fixed 25-member roster, every mission sums to 25
+   Team: m1 (dispatcher, excluded from responses) + m2–m25 (24 members) = 25 total
+   Each mission has exactly 25 responses covering m2–m25.
+   Counts per mission must equal: search + dispatch + unavailable + no_response = 25
+*/
+
+/* Helper to build no_response entries for members not explicitly listed */
+function _nr(missionId, ids) {
+  return ids.map(id => ({ missionId, memberId: id, availability: 'no_response', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false }));
+}
+
 const RESPONSES = [
-  /* msn-047 */
-  { missionId: 'msn-047', memberId: 'm2',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '14:40', eta: '15:55', vehicle: 'Red Ford F-150 · VA ABC-1001', checkedIn: false },
-  { missionId: 'msn-047', memberId: 'm3',  availability: 'search',    needsRide: false, canTakePassengers: true,  departureTime: '14:35', eta: '15:40', vehicle: 'Blue Honda CR-V · VA XYZ-2020', checkedIn: false },
-  { missionId: 'msn-047', memberId: 'm4',  availability: 'search',    needsRide: false, canTakePassengers: true,  departureTime: '14:50', eta: '16:10', vehicle: 'Green Subaru Outback · VA GHI-3030', checkedIn: false },
-  { missionId: 'msn-047', memberId: 'm5',  availability: 'search',    needsRide: true,  canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '', checkedIn: false },
-  { missionId: 'msn-047', memberId: 'm6',  availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-047', memberId: 'm7',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-047', memberId: 'm8',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-047', memberId: 'm9',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-047', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  /* m10–m15, m17–m24 = no_response for msn-047 (filled in by getResponses) */
+  /* ── msn-047 ACTIVE: 6 search, 3 dispatch, 2 unavailable, 14 no_response = 25 ── */
+  { missionId: 'msn-047', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '14:40', eta: '15:55', vehicle: 'Red Ford F-150 · VA ABC-1001',        checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: true,  departureTime: '14:35', eta: '15:40', vehicle: 'Blue Honda CR-V · VA XYZ-2020',       checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: true,  departureTime: '14:50', eta: '16:10', vehicle: 'Green Subaru Outback · VA GHI-3030',  checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm5',  availability: 'search',      needsRide: true,  canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                                   checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm10', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '14:55', eta: '16:05', vehicle: 'Gray Tacoma · VA JKL-4040',          checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm11', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '15:00', eta: '16:15', vehicle: 'Blue Tundra · VA MNO-5050',          checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                                   checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm8',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                                   checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm9',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                                   checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm6',  availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                                   checkedIn: false },
+  { missionId: 'msn-047', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                                   checkedIn: false },
+  ..._nr('msn-047', ['m12','m13','m14','m15','m17','m18','m19','m20','m21','m22','m23','m24','m25','m1']),
 
-  /* msn-046 */
-  { missionId: 'msn-046', memberId: 'm2',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:10', eta: '10:00', vehicle: 'Red Ford F-150', checkedIn: true  },
-  { missionId: 'msn-046', memberId: 'm3',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:00', eta: '09:55', vehicle: 'Blue Honda CR-V', checkedIn: true  },
-  { missionId: 'msn-046', memberId: 'm4',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:20', eta: '10:10', vehicle: 'Green Subaru', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm5',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:30', eta: '10:20', vehicle: 'Silver Toyota', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm8',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:25', eta: '10:15', vehicle: 'Black Jeep', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm9',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:15', eta: '10:05', vehicle: 'White RAM', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm10', availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:40', eta: '10:30', vehicle: 'Gray Tacoma', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm11', availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:45', eta: '10:35', vehicle: 'Blue Tundra', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm12', availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '09:50', eta: '10:40', vehicle: 'Red RAV4', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm7',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm6',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-046', memberId: 'm19', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  /* ── msn-046 ACTIVE: 9 search, 2 dispatch, 4 unavailable, 10 no_response = 25 ── */
+  { missionId: 'msn-046', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:10', eta: '10:00', vehicle: 'Red Ford F-150',    checkedIn: true  },
+  { missionId: 'msn-046', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:00', eta: '09:55', vehicle: 'Blue Honda CR-V',   checkedIn: true  },
+  { missionId: 'msn-046', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:20', eta: '10:10', vehicle: 'Green Subaru',      checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm5',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:30', eta: '10:20', vehicle: 'Silver Toyota',     checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm8',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:25', eta: '10:15', vehicle: 'Black Jeep',        checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm9',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:15', eta: '10:05', vehicle: 'White RAM',         checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm10', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:40', eta: '10:30', vehicle: 'Gray Tacoma',       checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm11', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:45', eta: '10:35', vehicle: 'Blue Tundra',       checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm12', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '09:50', eta: '10:40', vehicle: 'Red RAV4',          checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                  checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm6',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                  checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                  checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                  checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                  checkedIn: false },
+  { missionId: 'msn-046', memberId: 'm19', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '',      eta: '',      vehicle: '',                  checkedIn: false },
+  ..._nr('msn-046', ['m13','m14','m15','m20','m21','m22','m23','m24','m25','m1']),
 
-  /* msn-045 */
-  { missionId: 'msn-045', memberId: 'm2',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-045', memberId: 'm3',  availability: 'search',    needsRide: false, canTakePassengers: true,  departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-045', memberId: 'm4',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-045', memberId: 'm5',  availability: 'search',    needsRide: true,  canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-045', memberId: 'm7',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-045', memberId: 'm8',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  /* ── msn-045 STANDBY: 4 search, 2 dispatch, 5 unavailable, 14 no_response = 25 ── */
+  { missionId: 'msn-045', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-045', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: true,  departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-045', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-045', memberId: 'm5',  availability: 'search',      needsRide: true,  canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-045', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-045', memberId: 'm8',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
   { missionId: 'msn-045', memberId: 'm6',  availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
   { missionId: 'msn-045', memberId: 'm9',  availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
   { missionId: 'msn-045', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
   { missionId: 'msn-045', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
   { missionId: 'msn-045', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  ..._nr('msn-045', ['m10','m11','m12','m13','m14','m15','m19','m20','m21','m22','m23','m24','m25','m1']),
 
-  /* msn-043 (suspended) */
-  { missionId: 'msn-043', memberId: 'm2',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-043', memberId: 'm3',  availability: 'search',    needsRide: false, canTakePassengers: true,  departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-043', memberId: 'm4',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-043', memberId: 'm5',  availability: 'search',    needsRide: true,  canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-043', memberId: 'm9',  availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-043', memberId: 'm10', availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-043', memberId: 'm11', availability: 'search',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-043', memberId: 'm7',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
-  { missionId: 'msn-043', memberId: 'm8',  availability: 'dispatch',  needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  /* ── msn-043 SUSPENDED: 7 search, 2 dispatch, 3 unavailable, 13 no_response = 25 ── */
+  { missionId: 'msn-043', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-043', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: true,  departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-043', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-043', memberId: 'm5',  availability: 'search',      needsRide: true,  canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-043', memberId: 'm9',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-043', memberId: 'm10', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-043', memberId: 'm11', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-043', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-043', memberId: 'm8',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
   { missionId: 'msn-043', memberId: 'm6',  availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
   { missionId: 'msn-043', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
   { missionId: 'msn-043', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  ..._nr('msn-043', ['m12','m13','m14','m15','m18','m19','m20','m21','m22','m23','m24','m25','m1']),
+
+  /* ── msn-044 CLOSED: 11 search, 3 dispatch, 6 unavailable, 5 no_response = 25 ── */
+  { missionId: 'msn-044', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-044', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-044', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-044', memberId: 'm5',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-044', memberId: 'm8',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-044', memberId: 'm9',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-044', memberId: 'm10', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-044', memberId: 'm11', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm12', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm13', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm14', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm15', availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm25', availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm6',  availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm19', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-044', memberId: 'm20', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  ..._nr('msn-044', ['m21','m22','m23','m24','m1']),
+
+  /* ── msn-042 CLOSED: 8 search, 2 dispatch, 4 unavailable, 11 no_response = 25 ── */
+  { missionId: 'msn-042', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-042', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-042', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-042', memberId: 'm5',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-042', memberId: 'm8',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-042', memberId: 'm9',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-042', memberId: 'm10', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-042', memberId: 'm11', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-042', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-042', memberId: 'm6',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-042', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-042', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-042', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-042', memberId: 'm19', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  ..._nr('msn-042', ['m12','m13','m14','m15','m20','m21','m22','m23','m24','m25','m1']),
+
+  /* ── msn-041 CLOSED: 6 search, 1 dispatch, 5 unavailable, 13 no_response = 25 ── */
+  { missionId: 'msn-041', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-041', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-041', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-041', memberId: 'm5',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-041', memberId: 'm8',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-041', memberId: 'm9',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-041', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-041', memberId: 'm6',  availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-041', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-041', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-041', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-041', memberId: 'm19', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  ..._nr('msn-041', ['m10','m11','m12','m13','m14','m15','m20','m21','m22','m23','m24','m25','m1']),
+
+  /* ── msn-040 CLOSED: 7 search, 2 dispatch, 3 unavailable, 13 no_response = 25 ── */
+  { missionId: 'msn-040', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-040', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-040', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-040', memberId: 'm5',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-040', memberId: 'm8',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-040', memberId: 'm9',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-040', memberId: 'm10', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-040', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-040', memberId: 'm6',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-040', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-040', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-040', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  ..._nr('msn-040', ['m11','m12','m13','m14','m15','m19','m20','m21','m22','m23','m24','m25','m1']),
+
+  /* ── msn-039 CLOSED: 5 search, 2 dispatch, 4 unavailable, 14 no_response = 25 ── */
+  { missionId: 'msn-039', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-039', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-039', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-039', memberId: 'm5',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-039', memberId: 'm8',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-039', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-039', memberId: 'm6',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-039', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-039', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-039', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-039', memberId: 'm19', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  ..._nr('msn-039', ['m9','m10','m11','m12','m13','m14','m15','m20','m21','m22','m23','m24','m25','m1']),
+
+  /* ── msn-038 CLOSED: 9 search, 2 dispatch, 3 unavailable, 11 no_response = 25 ── */
+  { missionId: 'msn-038', memberId: 'm2',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-038', memberId: 'm3',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-038', memberId: 'm4',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-038', memberId: 'm5',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-038', memberId: 'm8',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: true  },
+  { missionId: 'msn-038', memberId: 'm9',  availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-038', memberId: 'm10', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-038', memberId: 'm11', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-038', memberId: 'm12', availability: 'search',      needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-038', memberId: 'm7',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-038', memberId: 'm6',  availability: 'dispatch',    needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-038', memberId: 'm16', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-038', memberId: 'm17', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  { missionId: 'msn-038', memberId: 'm18', availability: 'unavailable', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false },
+  ..._nr('msn-038', ['m13','m14','m15','m19','m20','m21','m22','m23','m24','m25','m1']),
 ];
 
 const INCIDENT_LOGS = {
@@ -321,12 +438,9 @@ const INCIDENT_LOGS = {
 
 /* ─── Derived helpers ───────────────────────────────────────────── */
 function getResponses(missionId) {
-  const explicit = RESPONSES.filter(r => r.missionId === missionId);
-  const respondedIds = new Set(explicit.map(r => r.memberId));
-  const noResp = MEMBERS
-    .filter(m => m.id !== 'm1' && !respondedIds.has(m.id))
-    .map(m => ({ missionId, memberId: m.id, availability: 'no_response', needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', checkedIn: false }));
-  return [...explicit, ...noResp];
+  // All responses are explicit in RESPONSES (including no_response entries via _nr()).
+  // This ensures every mission always totals exactly 25.
+  return RESPONSES.filter(r => r.missionId === missionId);
 }
 
 function getCounts(missionId) {
@@ -499,7 +613,7 @@ function screenEntry() {
         </div>
       </div>
     </div>
-    <div class="entry-footer">SAR Ops · v1.2 · Shenandoah Mountain Rescue Group</div>
+    <div class="entry-footer">SAR Ops · v1.3 · Shenandoah Mountain Rescue Group</div>
   </div>`;
 }
 
@@ -596,7 +710,7 @@ function screenMissionsList() {
       ${ICON_CLK} View past missions — March 2026 and earlier
     </div>
   </div>
-  <div class="version-tag">v1.2</div>`;
+  <div class="version-tag">v1.3</div>`;
 }
 
 /* ─── 3. Mission detail ─────────────────────────────────────────── */
@@ -714,7 +828,7 @@ function screenMissionDetail() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.2</div>`;
+  <div class="version-tag">v1.3</div>`;
 }
 
 /* ─── 4. New mission form ───────────────────────────────────────── */
@@ -799,7 +913,7 @@ function screenNewMission() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.2</div>`;
+  <div class="version-tag">v1.3</div>`;
 }
 
 /* ─── 5. Broadcast alert ────────────────────────────────────────── */
@@ -856,7 +970,7 @@ function screenBroadcastAlert() {
       <button class="btn btn-green" onclick="navigate('mission-detail',{missionId:'${missionId}'})">Send alert to 24 members</button>
     </div>
   </div>
-  <div class="version-tag">v1.2</div>`;
+  <div class="version-tag">v1.3</div>`;
 }
 
 /* ─── 6. Member alert response ──────────────────────────────────── */
@@ -951,7 +1065,7 @@ function screenMemberAlert() {
     </div>
     `}
   </div>
-  <div class="version-tag">v1.2</div>`;
+  <div class="version-tag">v1.3</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════
