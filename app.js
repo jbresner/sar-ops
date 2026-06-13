@@ -12,7 +12,7 @@ const APP = {
   params: {},
   nudged: {},
   gearChecked: {},
-  memberResponseDraft: { availability: null, needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '' },
+  memberResponseDraft: { availability: null, transport: null, needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', submitted: false },
   mapPin: null,
 };
 
@@ -613,7 +613,7 @@ function screenEntry() {
         </div>
       </div>
     </div>
-    <div class="entry-footer">SAR Ops · v1.7 · Shenandoah Mountain Rescue Group</div>
+    <div class="entry-footer">SAR Ops · v1.8 · Shenandoah Mountain Rescue Group</div>
   </div>`;
 }
 
@@ -710,7 +710,7 @@ function screenMissionsList() {
       ${ICON_CLK} View past missions — March 2026 and earlier
     </div>
   </div>
-  <div class="version-tag">v1.7</div>`;
+  <div class="version-tag">v1.8</div>`;
 }
 
 /* ─── 3. Mission detail ─────────────────────────────────────────── */
@@ -857,7 +857,7 @@ function screenMissionDetail() {
 
     </div>
   </div>
-  <div class="version-tag">v1.7</div>`;
+  <div class="version-tag">v1.8</div>`;
 }
 
 /* ─── 4. New mission form ───────────────────────────────────────── */
@@ -942,7 +942,7 @@ function screenNewMission() {
       </div>
     </div>
   </div>
-  <div class="version-tag">v1.7</div>`;
+  <div class="version-tag">v1.8</div>`;
 }
 
 /* ─── 5. Broadcast alert ────────────────────────────────────────── */
@@ -999,7 +999,7 @@ function screenBroadcastAlert() {
       <button class="btn btn-green" onclick="navigate('mission-detail',{missionId:'${missionId}'})">Send alert to 24 members</button>
     </div>
   </div>
-  <div class="version-tag">v1.7</div>`;
+  <div class="version-tag">v1.8</div>`;
 }
 
 /* ─── 6. Member alert response ──────────────────────────────────── */
@@ -1008,93 +1008,143 @@ function screenMemberAlert() {
   const m = getMission(missionId || 'msn-047');
   const draft = APP.memberResponseDraft;
   const msnNum = (m ? m.id : 'msn-047').replace('msn-','2026-');
+  const av     = draft.availability;
+  const trans  = draft.transport; // 'drive' | 'ride' | null
 
-  function respBtn(val, label) {
-    const cls = draft.availability === val ? `sel-${val==='no_response'?'unavail':val}` : '';
-    return `<button class="resp-btn ${cls}" onclick="setMemberAvail('${val}')">${label}</button>`;
+  // Submitted confirmation state
+  if (draft.submitted) {
+    const avLabel = av === 'search'
+      ? (trans === 'ride' ? 'Available for search · Needs a ride' : 'Available for search · Driving')
+      : av === 'dispatch' ? 'Available for dispatch'
+      : 'Unavailable';
+    return `
+  ${renderTopbar()}
+  <div class="page" style="max-width:560px;">
+    <div class="page-hdr">
+      <div class="page-title">Response sent</div>
+      <div class="page-sub">#${msnNum} · ${m ? m.title : ''}</div>
+    </div>
+
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:12px;border-bottom:0.5px solid var(--border);">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><polyline points="3,9 7,13 15,5" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:2px;">${avLabel}</div>
+          ${draft.eta ? `<div style="font-size:13px;color:var(--text-2);">ETA: ${draft.eta}</div>` : ''}
+          ${draft.vehicle ? `<div style="font-size:13px;color:var(--text-2);">Vehicle: ${draft.vehicle}</div>` : ''}
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text-2);">Your response has been received. The dispatcher will be in touch if your assignment changes.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm" onclick="navigate('mission-detail',{missionId:'${m ? m.id : 'msn-047'}'})" style="flex:1;">View mission</button>
+      <button class="btn btn-sm" onclick="resetMemberDraft();render();" style="flex:1;">Update my response</button>
+    </div>
+  </div>
+  <div class="version-tag">v1.8</div>`;
   }
 
-  const submitted = draft.submitted;
+  // Show transport fields for 'drive', hide for 'ride'
+  const showTransportFields = av === 'search' && trans === 'drive';
+  const showRideMessage     = av === 'search' && trans === 'ride';
+  const readyToSubmit       = av === 'dispatch' || av === 'unavailable' || (av === 'search' && trans !== null);
 
   return `
   ${renderTopbar()}
-  <div class="page">
+  <div class="page" style="max-width:560px;">
     <div class="page-hdr">
-      <div class="page-title">Incoming alert</div>
+      <div class="page-title">Mission alert</div>
+      <div class="page-sub">#${msnNum}</div>
     </div>
 
-    <div class="alert-banner">
-      <div class="alert-banner-title">Mission alert — #${msnNum}</div>
-      <div class="alert-banner-body">
-        ${m ? m.title : 'SAR activation'}<br>
-        ${m ? `${m.agency} · POC: ${m.poc} ${m.pocPhone}` : ''}<br>
-        ${m && m.description ? m.description.substring(0,120)+'...' : ''}
+    <!-- Full mission summary — no truncation -->
+    <div class="card" style="margin-bottom:12px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text-1);margin-bottom:6px;">${m ? m.title : 'SAR Activation'}</div>
+      ${m && m.description ? `<div style="font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:10px;">${m.description}</div>` : ''}
+      <div style="font-size:13px;color:var(--text-2);line-height:1.8;">
+        <b>Agency:</b> ${m ? m.agency : '—'} &nbsp;·&nbsp; <b>POC:</b> ${m ? m.poc : '—'} · ${m ? m.pocPhone : '—'}
+        ${m && m.baseName ? `<br><b>Base:</b> ${m.baseName}${m.baseAddress ? ', '+m.baseAddress : ''}` : ''}
+        <br><b>Activated:</b> ${m ? m.createdAt : '—'}
       </div>
     </div>
 
-    ${submitted ? `
-    <div class="card">
-      <div style="text-align:center;padding:12px 0;">
-        <div style="font-size:24px;margin-bottom:8px;">✓</div>
-        <div style="font-size:15px;font-weight:600;color:var(--green);margin-bottom:4px;">Response sent</div>
-        <div class="t-meta">${draft.availability === 'search' ? 'Available for search' : draft.availability === 'dispatch' ? 'Available for dispatch' : 'Marked unavailable'}${draft.eta ? ' · ETA ' + draft.eta : ''}</div>
-      </div>
-    </div>
-    ${draft.availability === 'search' ? `
-    <div class="card">
-      <div class="card-section-title">Gear checklist</div>
-      ${['Navigation (map + compass)','First aid kit','Headlamp + batteries','Water (2L min)','Emergency bivy','High-vis vest','Radio / comms device'].map((item,i)=>`
-      <div class="gear-item" onclick="toggleGear(${i},this)">
-        <div class="gear-box ${APP.gearChecked[i]?'checked':''}">${APP.gearChecked[i]?`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`:''}
+    <!-- Step 1: Availability -->
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-section-title" style="margin-bottom:12px;">Can you respond?</div>
+
+      <div class="member-resp-opts">
+        <div class="member-resp-opt ${av==='search'?'selected':''}" onclick="setMemberAvail('search')">
+          <div class="member-resp-opt-title">Available for search</div>
+          <div class="member-resp-opt-sub">I can respond and go to the field</div>
         </div>
-        <span>${item}</span>
-      </div>`).join('')}
-    </div>` : ''}
-    ` : `
-    <div class="card">
-      <div class="card-section-title">Can you respond?</div>
-      <div class="resp-btns">
-        ${respBtn('search','Available for search')}
-        ${respBtn('dispatch','Available for dispatch')}
-        ${respBtn('unavailable','Unavailable')}
+        <div class="member-resp-opt ${av==='dispatch'?'selected':''}" onclick="setMemberAvail('dispatch')">
+          <div class="member-resp-opt-title">Available for dispatch</div>
+          <div class="member-resp-opt-sub">I can support remotely</div>
+        </div>
+        <div class="member-resp-opt ${av==='unavailable'?'selected':''}" onclick="setMemberAvail('unavailable')">
+          <div class="member-resp-opt-title">Unavailable</div>
+          <div class="member-resp-opt-sub">I cannot participate in this mission</div>
+        </div>
       </div>
 
-      ${draft.availability === 'search' ? `
+      <!-- Step 2: Transport (search only) -->
+      ${av === 'search' ? `
       <div class="divider"></div>
+      <div class="card-section-title" style="margin-bottom:12px;">Transportation</div>
+      <div class="member-resp-opts">
+        <div class="member-resp-opt ${trans==='drive'?'selected':''}" onclick="setMemberTransport('drive')">
+          <div class="member-resp-opt-title">I can drive</div>
+          <div class="member-resp-opt-sub">I have my own vehicle and can depart</div>
+        </div>
+        <div class="member-resp-opt ${trans==='ride'?'selected':''}" onclick="setMemberTransport('ride')">
+          <div class="member-resp-opt-title">I need a ride</div>
+          <div class="member-resp-opt-sub">I need transportation to the base location</div>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Step 3: Travel details (drive only) -->
+      ${showTransportFields ? `
+      <div class="divider"></div>
+      <div class="card-section-title" style="margin-bottom:12px;">Travel details</div>
       <div class="field">
-        <div class="field-lbl">Drive status</div>
-        <select onchange="APP.memberResponseDraft.driveStatus=this.value">
-          <option>Driving solo</option>
-          <option>Can take a passenger</option>
-          <option>Needs a ride</option>
-        </select>
+        <div class="field-lbl">Vehicle</div>
+        <input type="text" id="mb-vehicle" value="${draft.vehicle}" placeholder="e.g. Blue Honda CR-V · VA · ABC-1234">
       </div>
       <div class="field">
         <div class="field-lbl">Departure &amp; ETA</div>
         <div class="row2">
           <div>
-            <div style="font-size:11px;color:var(--text-3);margin-bottom:3px;">Departs</div>
-            <input type="time" id="mb-depart">
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:4px;">Departs</div>
+            <input type="time" id="mb-depart" value="${draft.departureTime}">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--text-3);margin-bottom:3px;">ETA at base</div>
-            <input type="time" id="mb-eta">
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:4px;">ETA at base</div>
+            <input type="time" id="mb-eta" value="${draft.eta}">
           </div>
         </div>
       </div>
-      <div class="field">
-        <div class="field-lbl">Vehicle <span class="t-opt">For dispatcher</span></div>
-        <input type="text" id="mb-vehicle" placeholder="e.g. Blue Honda CR-V · VA · ABC-1234">
+      ` : ''}
+
+      <!-- Ride message -->
+      ${showRideMessage ? `
+      <div class="divider"></div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.6;padding:4px 0;">
+        Your arrival time will depend on driver assignment. The dispatcher will coordinate your ride and confirm details.
       </div>
       ` : ''}
 
-      ${draft.availability ? `
-      <button class="btn btn-green" style="width:100%;margin-top:4px;" onclick="submitMemberResponse()">Send to dispatcher</button>
+      ${readyToSubmit ? `
+      <div class="divider"></div>
+      <button class="btn btn-green" style="width:100%;" onclick="submitMemberResponse()">Send to dispatcher</button>
       ` : ''}
+
     </div>
-    `}
   </div>
-  <div class="version-tag">v1.7</div>`;
+  <div class="version-tag">v1.8</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1131,13 +1181,29 @@ function clearMapPin() {
 
 function setMemberAvail(val) {
   APP.memberResponseDraft.availability = val;
+  APP.memberResponseDraft.transport = null; // reset transport when availability changes
   render();
 }
 
+function setMemberTransport(val) {
+  APP.memberResponseDraft.transport = val;
+  render();
+}
+
+function resetMemberDraft() {
+  APP.memberResponseDraft = { availability: null, transport: null, needsRide: false, canTakePassengers: false, departureTime: '', eta: '', vehicle: '', submitted: false };
+}
+
 function submitMemberResponse() {
-  const eta = document.getElementById('mb-eta');
-  if (eta) APP.memberResponseDraft.eta = eta.value;
-  APP.memberResponseDraft.submitted = true;
+  const eta     = document.getElementById('mb-eta');
+  const depart  = document.getElementById('mb-depart');
+  const vehicle = document.getElementById('mb-vehicle');
+  if (eta)     APP.memberResponseDraft.eta           = eta.value;
+  if (depart)  APP.memberResponseDraft.departureTime = depart.value;
+  if (vehicle) APP.memberResponseDraft.vehicle       = vehicle.value;
+  APP.memberResponseDraft.needsRide          = APP.memberResponseDraft.transport === 'ride';
+  APP.memberResponseDraft.canTakePassengers  = false;
+  APP.memberResponseDraft.submitted          = true;
   render();
 }
 

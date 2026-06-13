@@ -473,6 +473,23 @@ textarea { resize: vertical; line-height: 1.5; }
   padding: 10px 12px; text-align: center; flex: 1;
 }
 
+/* Member response option cards */
+.member-resp-opts { display: flex; flex-direction: column; gap: 8px; }
+.member-resp-opt {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+  background: var(--bg-card);
+}
+.member-resp-opt:hover { border-color: var(--border-md); background: var(--bg-subtle); }
+.member-resp-opt.selected { border-color: var(--green); background: var(--green-bg); }
+.member-resp-opt-title { font-size: 14px; font-weight: 600; color: var(--text-1); margin-bottom: 2px; }
+.member-resp-opt-sub   { font-size: 12px; color: var(--text-2); }
+.member-resp-opt.selected .member-resp-opt-title { color: var(--green-dk); }
+.member-resp-opt.selected .member-resp-opt-sub   { color: var(--green-dk); opacity: 0.8; }
+
 /* Expand/collapse control for long lists */
 .expand-control {
   font-size: 13px; color: var(--blue); font-weight: 500;
