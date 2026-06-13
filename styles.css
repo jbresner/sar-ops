@@ -462,6 +462,21 @@ textarea { resize: vertical; line-height: 1.5; }
 .collapsible-chevron { font-size: 11px; color: var(--text-3); }
 .collapsible-body { }
 
+/* Mission description in header */
+.mission-description {
+  font-size: 14px; color: var(--text-1); line-height: 1.65;
+  background: var(--bg-subtle); border-radius: var(--radius-md);
+  padding: 10px 12px; border-left: 3px solid var(--border-md);
+}
+
+/* Expand/collapse control for long lists */
+.expand-control {
+  font-size: 13px; color: var(--blue); font-weight: 500;
+  cursor: pointer; padding: 8px 0 2px;
+  display: inline-block;
+}
+.expand-control:hover { text-decoration: underline; }
+
 /* Responsive: stack on narrow screens */
 @media (max-width: 700px) {
   .detail-grid { grid-template-columns: 1fr; }
