@@ -477,12 +477,12 @@ function screenEntry() {
       <div class="entry-org">Shenandoah Mountain Rescue Group</div>
       <div class="entry-wordmark">SAR Ops</div>
       <div class="entry-rule"></div>
-      <div class="entry-prompt">Who are you today?</div>
+      <div class="entry-prompt">Select your role to continue</div>
     </div>
     <div class="role-cards">
       <div class="role-card" onclick="selectRole('dispatcher')">
         <div class="role-card-inner">
-          <div class="role-icon-wrap role-icon-blue">\${ICON_DISP}</div>
+          <div class="role-icon-wrap role-icon-blue">${ICON_DISP}</div>
           <div class="role-card-text">
             <div class="role-title">Dispatcher</div>
             <div class="role-sub">Manage alerts and monitor team activity</div>
@@ -491,7 +491,7 @@ function screenEntry() {
       </div>
       <div class="role-card" onclick="selectRole('member')">
         <div class="role-card-inner">
-          <div class="role-icon-wrap role-icon-green">\${ICON_MBR}</div>
+          <div class="role-icon-wrap role-icon-green">${ICON_MBR}</div>
           <div class="role-card-text">
             <div class="role-title">Member</div>
             <div class="role-sub">Receive alerts and report availability</div>
