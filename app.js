@@ -1011,12 +1011,12 @@ function screenMemberMissions() {
   }
 
   function respStatusLabel(resp) {
-    if (!resp) return { label: 'Response required', sub: '', cls: 'mmr-required' };
+    if (!resp || !resp.submitted) return { label: 'Response required', sub: '', cls: 'mmr-required' };
     if (resp.availability === 'search') {
-      const sub = resp.transport === 'ride' ? 'Needs ride' : resp.eta ? 'ETA ' + resp.eta : 'Can drive';
+      const sub = resp.transport === 'ride' ? 'Needs ride' : 'Can drive';
       return { label: 'Available for search', sub, cls: 'mmr-search' };
     }
-    if (resp.availability === 'dispatch') return { label: 'Available for dispatch', sub: 'Remote support', cls: 'mmr-dispatch' };
+    if (resp.availability === 'dispatch') return { label: 'Available for dispatch', sub: '', cls: 'mmr-dispatch' };
     if (resp.availability === 'unavailable') return { label: 'Unavailable', sub: '', cls: 'mmr-unavail' };
     return { label: 'Response required', sub: '', cls: 'mmr-required' };
   }
@@ -1025,23 +1025,29 @@ function screenMemberMissions() {
   const ORDER = { required: 0, search: 1, dispatch: 2, unavailable: 3 };
   const sorted = [...activeMissions].sort((a, b) => {
     const ra = getMemberResp(a.id), rb = getMemberResp(b.id);
-    const ka = ra ? ra.availability : 'required';
-    const kb = rb ? rb.availability : 'required';
+    const ka = (ra && ra.submitted) ? ra.availability : 'required';
+    const kb = (rb && rb.submitted) ? rb.availability : 'required';
     return (ORDER[ka] ?? 4) - (ORDER[kb] ?? 4);
   });
 
   function missionCard(m) {
     const resp = getMemberResp(m.id);
     const { label, sub, cls } = respStatusLabel(resp);
+    // Location: strip agency part (after ·) for cleaner display
+    const locationName = m.location.split('·')[0].trim();
     return `
     <div class="member-mission-card" onclick="navigate('member-alert',{missionId:'${m.id}'})">
       <div class="member-mission-card-top">
-        <div class="member-mission-info">
-          <div class="member-mission-title">${m.title}</div>
-          <div class="member-mission-meta">${m.agency} &nbsp;·&nbsp; ${m.location.split('·')[0].trim()}</div>
-        </div>
+        <div class="member-mission-title">${m.title}</div>
         ${statusPill(m.status)}
       </div>
+      ${m.description ? `<div class="member-mission-desc">${m.description}</div>` : ''}
+      <div class="member-mission-meta">
+        <span>${m.agency}</span>
+        <span class="mmeta-dot">·</span>
+        <span>${locationName}</span>
+      </div>
+      <div class="member-mission-time">Activated ${m.createdAt}</div>
       <div class="member-mission-status ${cls}">
         <span class="mmr-label">${label}</span>
         ${sub ? `<span class="mmr-sub">${sub}</span>` : ''}
@@ -1052,7 +1058,7 @@ function screenMemberMissions() {
   return `
   ${renderTopbar()}
   ${bc([{label:'Home',screen:'entry'},{label:'Active missions'}])}
-  <div class="page" style="max-width:560px;">
+  <div class="page" style="max-width:600px;">
     <div class="page-hdr">
       <div class="page-title">Active missions</div>
       <div class="page-sub">Shenandoah Mountain Rescue Group · ${sorted.length} mission${sorted.length!==1?'s':''} active</div>
@@ -1062,7 +1068,7 @@ function screenMemberMissions() {
       : sorted.map(missionCard).join('')
     }
   </div>
-  <div class="version-tag">v1.9</div>`;
+  <div class="version-tag">v2.0</div>`;
 }
 
 /* ─── 7. Member alert / response ────────────────────────────────── */
@@ -1114,7 +1120,7 @@ function screenMemberAlert() {
       <button class="btn btn-sm" onclick="editMemberResponse('${mid}')" style="flex:1;">Update my response</button>
     </div>
   </div>
-  <div class="version-tag">v1.9</div>`;
+  <div class="version-tag">v2.0</div>`;
   }
 
   const showTransportFields = av === 'search' && trans === 'drive';
@@ -1207,7 +1213,7 @@ function screenMemberAlert() {
       ` : ''}
     </div>
   </div>
-  <div class="version-tag">v1.9</div>`;
+  <div class="version-tag">v2.0</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════

@@ -476,20 +476,28 @@ textarea { resize: vertical; line-height: 1.5; }
 /* ─── Member missions list ─────────────────────────────────────── */
 .member-mission-card {
   background: var(--bg-card); border: 0.5px solid var(--border);
-  border-radius: var(--radius-lg); padding: 14px 16px;
-  cursor: pointer; margin-bottom: 8px;
+  border-radius: var(--radius-lg); padding: 16px 18px;
+  cursor: pointer; margin-bottom: 10px;
   transition: border-color 0.12s;
 }
 .member-mission-card:hover { border-color: var(--border-md); box-shadow: var(--shadow-sm); }
-.member-mission-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.member-mission-info { flex: 1; min-width: 0; }
-.member-mission-title { font-size: 14px; font-weight: 600; color: var(--text-1); margin-bottom: 3px; }
-.member-mission-meta  { font-size: 12px; color: var(--text-2); }
+.member-mission-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 10px; margin-bottom: 8px;
+}
+.member-mission-title { font-size: 15px; font-weight: 600; color: var(--text-1); line-height: 1.3; }
+.member-mission-desc  { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 10px; }
+.member-mission-meta  {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-2); margin-bottom: 3px;
+}
+.mmeta-dot { color: var(--border-md); }
+.member-mission-time  { font-size: 12px; color: var(--text-3); margin-bottom: 10px; }
 
 /* Member response status bar */
 .member-mission-status {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px; border-radius: var(--radius-md);
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: var(--radius-md);
   font-size: 12px; font-weight: 500;
 }
 .mmr-required { background: #FFF7ED; color: #92400E; border: 0.5px solid #FCD38D; }
@@ -498,7 +506,7 @@ textarea { resize: vertical; line-height: 1.5; }
 .mmr-unavail  { background: var(--red-bg);   color: var(--red);      border: 0.5px solid #E8A0A0; }
 .mmr-label  { font-weight: 600; }
 .mmr-sub    { font-weight: 400; color: inherit; opacity: 0.75; }
-.mmr-sub::before { content: '·'; margin-right: 6px; }
+.mmr-sub::before { content: '·'; margin-right: 4px; }
 
 /* Member response option cards */
 .member-resp-opts { display: flex; flex-direction: column; gap: 8px; }
