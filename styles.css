@@ -477,17 +477,13 @@ textarea { resize: vertical; line-height: 1.5; }
 .member-mission-card {
   background: var(--bg-card); border: 0.5px solid var(--border);
   border-radius: var(--radius-lg); padding: 16px 18px;
-  cursor: pointer; margin-bottom: 10px;
+  margin-bottom: 10px;
   transition: border-color 0.12s;
 }
 .member-mission-card:hover { border-color: var(--border-md); box-shadow: var(--shadow-sm); }
 
-/* Pending cards get a subtle left accent */
-.mmc-pending { border-left: 3px solid var(--amber); }
-.mmc-pending:hover { border-color: var(--amber); }
-
-/* Responded cards are quieter */
-.mmc-responded { opacity: 0.85; }
+/* Responded cards are slightly quieter */
+.mmc-responded { opacity: 0.82; }
 .mmc-responded:hover { opacity: 1; }
 
 .member-mission-card-top {
@@ -501,26 +497,30 @@ textarea { resize: vertical; line-height: 1.5; }
   font-size: 12px; color: var(--text-2); margin-bottom: 3px;
 }
 .mmeta-dot { color: var(--border-md); }
-.member-mission-time { font-size: 12px; color: var(--text-3); margin-bottom: 12px; }
+.member-mission-time { font-size: 12px; color: var(--text-3); margin-bottom: 10px; }
 
-/* Action row for pending cards */
-.mmc-action-row {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 13px; font-weight: 600; color: var(--blue);
-}
-
-/* Status + edit row for responded cards */
-.mmc-responded-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
+/* Current status text for responded cards */
 .mmc-status-text {
-  font-size: 13px; color: var(--text-2); font-weight: 500;
+  font-size: 13px; color: var(--text-2); font-weight: 500; margin-bottom: 10px;
 }
-.mmc-edit-cta {
-  font-size: 12px; color: var(--blue); font-weight: 500;
-  white-space: nowrap; flex-shrink: 0;
-  text-decoration: underline; text-underline-offset: 2px;
+
+/* Two-button action row */
+.mmc-actions {
+  display: flex; gap: 8px; padding-top: 2px;
 }
+.mmc-btn {
+  font-size: 12px; font-weight: 500;
+  padding: 7px 14px; border-radius: var(--radius-md);
+  border: 0.5px solid var(--border);
+  background: var(--bg-card); color: var(--text-1);
+  cursor: pointer; transition: background 0.12s;
+}
+.mmc-btn:hover { background: var(--bg-subtle); }
+.mmc-btn-primary {
+  background: var(--blue-bg); color: var(--blue);
+  border-color: #9BC3E8;
+}
+.mmc-btn-primary:hover { background: #D4E9F8; }
 
 /* Member response option cards */
 .member-resp-opts { display: flex; flex-direction: column; gap: 8px; }

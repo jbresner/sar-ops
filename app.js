@@ -1038,15 +1038,15 @@ function screenMemberMissions() {
 
   function pendingCard(m) {
     return `
-    <div class="member-mission-card mmc-pending" onclick="navigate('member-alert',{missionId:'${m.id}'})">
+    <div class="member-mission-card">
       <div class="member-mission-card-top">
         <div class="member-mission-title">${m.title}</div>
         ${statusPill(m.status)}
       </div>
       ${cardMeta(m)}
-      <div class="mmc-action-row">
-        <span class="mmc-respond-cta">Respond</span>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7 3l4 4-4 4" stroke="var(--blue)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="mmc-actions">
+        <button class="mmc-btn mmc-btn-primary" onclick="event.stopPropagation();navigate('member-alert',{missionId:'${m.id}'})">Submit availability</button>
+        <button class="mmc-btn" onclick="event.stopPropagation();navigate('mission-detail',{missionId:'${m.id}'})">View mission</button>
       </div>
     </div>`;
   }
@@ -1055,15 +1055,16 @@ function screenMemberMissions() {
     const resp = getResp(m.id);
     const statusStr = respText(resp);
     return `
-    <div class="member-mission-card mmc-responded" onclick="navigate('member-alert',{missionId:'${m.id}'})">
+    <div class="member-mission-card mmc-responded">
       <div class="member-mission-card-top">
         <div class="member-mission-title">${m.title}</div>
         ${statusPill(m.status)}
       </div>
       ${cardMeta(m)}
-      <div class="mmc-responded-row">
-        <span class="mmc-status-text">${statusStr}</span>
-        <span class="mmc-edit-cta">Edit response</span>
+      <div class="mmc-status-text">${statusStr}</div>
+      <div class="mmc-actions">
+        <button class="mmc-btn mmc-btn-primary" onclick="event.stopPropagation();navigate('member-alert',{missionId:'${m.id}'})">Update availability</button>
+        <button class="mmc-btn" onclick="event.stopPropagation();navigate('mission-detail',{missionId:'${m.id}'})">View mission</button>
       </div>
     </div>`;
   }
@@ -1092,7 +1093,7 @@ function screenMemberMissions() {
     ` : ''}
 
   </div>
-  <div class="version-tag">v2.1</div>`;
+  <div class="version-tag">v2.2</div>`;
 }
 
 /* ─── 7. Member alert / response ────────────────────────────────── */
@@ -1144,7 +1145,7 @@ function screenMemberAlert() {
       <button class="btn btn-sm" onclick="editMemberResponse('${mid}')" style="flex:1;">Update my response</button>
     </div>
   </div>
-  <div class="version-tag">v2.1</div>`;
+  <div class="version-tag">v2.2</div>`;
   }
 
   const showTransportFields = av === 'search' && trans === 'drive';
@@ -1237,7 +1238,7 @@ function screenMemberAlert() {
       ` : ''}
     </div>
   </div>
-  <div class="version-tag">v2.1</div>`;
+  <div class="version-tag">v2.2</div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════
